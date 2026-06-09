@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 982e24899564371468dd39ab36501d1e, type: 3}
+  m_Name: "\u0421\u0442\u0435\u043D\u0430"
+  m_EditorClassIdentifier: Assembly-CSharp::MapEditorPrototype.WallDefinition
+  id: 1
+  displayName: "\u0421\u0442\u0435\u043D\u0430"
+  icon: {fileID: 0}
+  prefab: {fileID: 4584731447985061852, guid: 2393b73d9ce76ed4293a3728665e0ad4, type: 3}
+  worldOffset: {x: 0, y: 0, z: 0}
