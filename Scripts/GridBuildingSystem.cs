@@ -119,6 +119,32 @@ namespace MapEditorPrototype
             return placedObject;
         }
 
+        public void PlaceBatch(BuildingDefinition definition, List<Vector2Int> cells, int rotationSteps, float baseY, float yRotation)
+        {
+            if (definition == null || cells == null || cells.Count == 0) return;
+
+            foreach (var cell in cells)
+            {
+                if (!CanPlace(definition, cell, rotationSteps, baseY)) continue;
+
+                Vector2Int rotatedFootprint = RotateFootprint(definition.Footprint, rotationSteps);
+                List<Vector2Int> coveredCells = GetCoveredCells(cell, rotatedFootprint);
+                Vector3 worldPosition = GetPlacementPosition(cell, rotatedFootprint, definition.worldOffset, definition.layer, baseY);
+                Quaternion rotation = Quaternion.Euler(0f, yRotation, 0f);
+
+                Transform parent = placedObjectsRoot != null ? placedObjectsRoot : transform;
+                GameObject instance = Instantiate(definition.prefab, worldPosition, rotation, parent);
+                
+                PlacedObject placedObject = instance.GetComponent<PlacedObject>();
+                if (placedObject == null) placedObject = instance.AddComponent<PlacedObject>();
+
+                placedObject.Initialize(definition, cell, rotationSteps, yRotation, coveredCells, true, baseY, null);
+                RegisterPlacedObject(placedObject);
+            }
+
+            Changed?.Invoke();
+        }
+
         public PlacedObject PlaceFree(BuildingDefinition definition, Vector3 worldPosition, int rotationSteps, float yRotation, string objectId = null)
         {
             if (definition == null || definition.prefab == null)

@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using System.Threading.Tasks;
 
 namespace MapEditorPrototype
 {
@@ -13,56 +14,38 @@ namespace MapEditorPrototype
         public event Action<EditApplyRequestDto> PatchSubmissionRequested;
         public event Action<EditApplyResultDto> PatchAppliedLocally;
 
-        public EditApplyRequestDto BuildApplyRequest(string authorPlayerId)
+        public async Task SubmitPatchDirectAsync(WorldPatch patch)
         {
-            if (editDraftSessionController == null)
-            {
-                return null;
-            }
+            if (patch == null || !patch.HasAnyChanges) return;
 
-            WorldPatch patch = editDraftSessionController.ApplyDraftSession();
-            if (patch == null || !patch.HasAnyChanges)
-            {
-                return null;
-            }
-
-            return new EditApplyRequestDto
+            EditApplyRequestDto request = await Task.Run(() => new EditApplyRequestDto
             {
                 worldId = patch.WorldId,
-                authorPlayerId = authorPlayerId,
+                authorPlayerId = "local_player",
                 patch = WorldNetworkDtoMapper.ToPatchDto(patch)
-            };
-        }
-
-        public void SubmitCurrentDraft(string authorPlayerId)
-        {
-            EditApplyRequestDto request = BuildApplyRequest(authorPlayerId);
-            if (request == null)
-            {
-                return;
-            }
+            });
 
             if (networkSessionManager != null && networkSessionManager.IsHost && hostWorldReplicationService != null)
             {
-                WorldPatch patch = WorldNetworkDtoMapper.FromPatchDto(request.patch);
-                WorldPatchDto appliedPatchDto = hostWorldReplicationService.CommitPatchAndBuildDto(patch);
+                WorldPatch realPatch = WorldNetworkDtoMapper.FromPatchDto(request.patch);
+                WorldPatchDto appliedPatchDto = hostWorldReplicationService.CommitPatchAndBuildDto(realPatch);
                 if (appliedPatchDto != null)
                 {
-                    EditApplyResultDto result = new EditApplyResultDto
-                    {
-                        accepted = true,
-                        reason = string.Empty,
-                        appliedPatch = appliedPatchDto
-                    };
-
                     clientWorldReplicationService?.ApplyPatchDto(appliedPatchDto);
-                    PatchAppliedLocally?.Invoke(result);
+                    PatchAppliedLocally?.Invoke(new EditApplyResultDto { accepted = true, appliedPatch = appliedPatchDto });
                 }
             }
             else
             {
                 PatchSubmissionRequested?.Invoke(request);
             }
+        }
+
+        public async Task SubmitCurrentDraftAsync(string authorPlayerId)
+        {
+            if (editDraftSessionController == null) return;
+            WorldPatch patch = await editDraftSessionController.ApplyDraftSessionAsync();
+            await SubmitPatchDirectAsync(patch);
         }
     }
 }

@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using Unity.Netcode;
 
 namespace MapEditorPrototype
 {
@@ -49,13 +51,15 @@ namespace MapEditorPrototype
         [SerializeField] private BuildCatalog buildCatalog;
         [SerializeField] private WallCatalog wallCatalog;
         [SerializeField] private PathCatalog pathCatalog;
-        [SerializeField] private DetailPaintBrushCatalog detailPaintBrushCatalog;
         [SerializeField] private BuildPreview buildPreview;
+        [SerializeField] private WallLinePreviewManager wallLinePreviewManager;
+        [SerializeField] private GridObjectPreviewManager gridObjectPreviewManager;
         [SerializeField] private PathPreviewRenderer pathPreviewRenderer;
         [SerializeField] private PathEditingHandlesRenderer pathEditingHandlesRenderer;
         [SerializeField] private EditDraftSessionController editDraftSessionController;
         [SerializeField] private MapSaveSystem mapSaveSystem;
         [SerializeField] private EditorUndoRedoSystem undoRedoSystem;
+        [SerializeField] private MultiplayerEditApplyService multiplayerEditApplyService;
 
         [Header("Input")]
         [SerializeField] private KeyCode rotateKey = KeyCode.R;
@@ -67,15 +71,16 @@ namespace MapEditorPrototype
         [SerializeField] private KeyCode doorToolKey = KeyCode.F3;
         [SerializeField] private KeyCode windowToolKey = KeyCode.F4;
         [SerializeField] private KeyCode pathToolKey = KeyCode.F6;
-        [SerializeField] private KeyCode detailPaintToolKey = KeyCode.F7;
         [SerializeField] private KeyCode saveKey = KeyCode.F5;
         [SerializeField] private KeyCode loadKey = KeyCode.F9;
         [SerializeField] private LayerMask placementRaycastMask = ~0;
 
-        [Header("Placement")]
+        [Header("Settings")]
         [SerializeField] private float stackedSurfacePadding = 0.01f;
-        [SerializeField] private float freeRotationSnapAngle = 15f;
-        [SerializeField] private float freeRotationMinMovement = 0.025f;
+        [SerializeField] private float pathWidthStep = 0.25f;
+        [SerializeField] private KeyCode increasePathWidthKey = KeyCode.RightBracket;
+        [SerializeField] private KeyCode decreasePathWidthKey = KeyCode.LeftBracket;
+        [SerializeField] private KeyCode deleteSelectedPathKey = KeyCode.Delete;
 
         private int rotationSteps;
         private PlacedObject selectedObject;
@@ -83,41 +88,18 @@ namespace MapEditorPrototype
         private BuildToolMode activeTool = BuildToolMode.Object;
         private PlacementPaintMode paintMode = PlacementPaintMode.Single;
 
-        private bool isObjectBrushPainting;
-        private bool isObjectRectanglePainting;
-        private bool isWallBrushPainting;
-        private bool isWallRectanglePainting;
-        private bool dragSessionRecordedChange;
-
-        private Vector2Int objectPaintStartCell;
-        private Vector2Int objectPaintLastCell;
+        private bool isObjectBrushPainting, isObjectRectanglePainting, isWallBrushPainting, isWallRectanglePainting;
+        private Vector2Int objectPaintStartCell, wallRectangleStartCell, objectPaintLastCell;
+        private WallEdge wallPaintLastEdge;
         private float objectPaintBaseY;
 
-        private WallEdge wallPaintLastEdge;
-        private Vector2Int wallRectangleStartCell;
-
-        private bool hasFreeRotationReference;
-        private Vector3 lastFreePlacementPoint;
-        private float freeRotationY;
-
         private readonly List<Vector3> activePathPoints = new List<Vector3>();
-        private bool isPathDrawing;
-        private bool detailPaintStrokeRecordedUndo;
-        private bool pathDragDirty;
-
+        private bool isPathDrawing, dragSessionRecordedChange, pathDragDirty;
         private PathStroke selectedPathStroke;
-        private int selectedPathPointIndex = -1;
-        private int selectedPathWidthSegmentIndex = -1;
+        private int selectedPathPointIndex = -1, selectedPathWidthSegmentIndex = -1;
         private bool isDraggingPathPoint;
-        private bool isDraggingPathWidthHandle;
-        [SerializeField] private float pathPointSelectRadius = 0.6f;
-        [SerializeField] private float pathWidthStep = 0.25f;
-        [SerializeField] private KeyCode increasePathWidthKey = KeyCode.RightBracket;
-        [SerializeField] private KeyCode decreasePathWidthKey = KeyCode.LeftBracket;
-        [SerializeField] private KeyCode deleteSelectedPathKey = KeyCode.Delete;
 
         private BuildWorldCommandService buildCommandService;
-
         public event Action StateChanged;
 
         public BuildToolMode CurrentTool => pendingMove != null ? BuildToolMode.Move : activeTool;
@@ -125,304 +107,52 @@ namespace MapEditorPrototype
         public PlacedObject SelectedObject => selectedObject;
         public bool HasPendingMove => pendingMove != null;
         public bool HasSelectedPath => selectedPathStroke != null;
-        public PathStroke SelectedPathStroke => selectedPathStroke;
         public bool HasActiveEditDraft => editDraftSessionController != null && editDraftSessionController.HasActiveDraft;
 
         private void Awake()
         {
+            if (wallLinePreviewManager == null) wallLinePreviewManager = GetComponentInChildren<WallLinePreviewManager>() ?? new GameObject("WallLinePreviewManager").AddComponent<WallLinePreviewManager>();
+            if (gridObjectPreviewManager == null) gridObjectPreviewManager = GetComponentInChildren<GridObjectPreviewManager>() ?? new GameObject("GridObjectPreviewManager").AddComponent<GridObjectPreviewManager>();
+            if (multiplayerEditApplyService == null) multiplayerEditApplyService = FindObjectOfType<MultiplayerEditApplyService>();
             RebuildCommandService();
-            UpdateCommandServiceDraftMode();
         }
 
-        private void Start()
-        {
-            RefreshPreviewDefinition();
-            NotifyStateChanged();
-        }
+        private void OnEnable() { if (undoRedoSystem != null) undoRedoSystem.StateChanged += HandleUndoRedoStateChanged; }
+        private void OnDisable() { if (undoRedoSystem != null) undoRedoSystem.StateChanged -= HandleUndoRedoStateChanged; }
+        private void Start() { RefreshPreviewDefinition(); NotifyStateChanged(); }
 
         private void Update()
         {
-            if (gameModeController == null || gridBuildingSystem == null || buildCatalog == null || buildPreview == null)
-            {
-                return;
-            }
+            if (gameModeController == null || gridBuildingSystem == null || buildCatalog == null || buildPreview == null) return;
+            if (selectedObject == null && !ReferenceEquals(selectedObject, null)) { selectedObject = null; NotifyStateChanged(); }
+            if (selectedPathStroke == null && !ReferenceEquals(selectedPathStroke, null)) { DeselectPathStroke(); NotifyStateChanged(); }
 
-            if (!ReferenceEquals(selectedObject, null) && selectedObject == null)
-            {
-                selectedObject = null;
-                NotifyStateChanged();
-            }
-
-            if (!ReferenceEquals(selectedPathStroke, null) && selectedPathStroke == null)
-            {
-                selectedPathStroke = null;
-                selectedPathPointIndex = -1;
-                selectedPathWidthSegmentIndex = -1;
-                isDraggingPathPoint = false;
-                isDraggingPathWidthHandle = false;
-                pathEditingHandlesRenderer?.Hide();
-                NotifyStateChanged();
-            }
-
-            if (gameModeController.CurrentMode != GameMode.Edit)
-            {
-                buildPreview.SetVisible(false);
-                ResetInteractionStates();
-                return;
-            }
+            if (gameModeController.CurrentMode != GameMode.Edit) { buildPreview.SetVisible(false); ResetInteractionStates(); return; }
 
             HandleGlobalInput();
-
             switch (CurrentTool)
             {
-                case BuildToolMode.Wall:
-                case BuildToolMode.Door:
-                case BuildToolMode.Window:
-                    HandleWallTool();
-                    break;
-                case BuildToolMode.Path:
-                    HandlePathTool();
-                    break;
-                case BuildToolMode.DetailPaint:
-                    HandleDetailPaintTool();
-                    break;
-                default:
-                    HandleObjectTool();
-                    break;
+                case BuildToolMode.Wall: case BuildToolMode.Door: case BuildToolMode.Window: HandleWallTool(); break;
+                case BuildToolMode.Path: HandlePathTool(); break;
+                default: HandleObjectTool(); break;
             }
         }
 
-        public void SetTool(BuildToolMode tool)
-        {
-            if (tool == BuildToolMode.Move)
-            {
-                return;
-            }
+        public void SetTool(BuildToolMode tool) { if (tool == BuildToolMode.Move) return; if (pendingMove != null) CancelPendingMoveAndRestore(); activeTool = tool; ResetInteractionStates(); DeselectCurrentObject(); DeselectPathStroke(); RefreshPreviewDefinition(); NotifyStateChanged(); }
+        public void SetLayer(BuildLayer l) { if (pendingMove != null) CancelPendingMoveAndRestore(); buildCatalog.SetLayer(l); activeTool = BuildToolMode.Object; ResetInteractionStates(); RefreshPreviewDefinition(); NotifyStateChanged(); }
+        public void SetPaintMode(PlacementPaintMode m) { if (paintMode == m) return; paintMode = m; ResetDragStates(); NotifyStateChanged(); }
 
-            if (pendingMove != null && tool != BuildToolMode.Object)
-            {
-                CancelPendingMoveAndRestore();
-            }
+        public void ResetTransientEditorState() { DeselectCurrentObject(); DeselectPathStroke(); pendingMove = null; rotationSteps = 0; activeTool = BuildToolMode.Object; paintMode = PlacementPaintMode.Single; ResetInteractionStates(); RefreshPreviewDefinition(); if (buildPreview != null) buildPreview.SetVisible(false); NotifyStateChanged(); }
+        private void RebuildCommandService() { buildCommandService = new BuildWorldCommandService(gridBuildingSystem, wallSystem, pathSystem, mapSaveSystem, undoRedoSystem); }
+        private void UpdateCommandServiceDraftMode() { if (buildCommandService != null) buildCommandService.SuppressBuildVersionTracking = HasActiveEditDraft; }
+        private void EnsureDraftSessionStarted() { if (editDraftSessionController != null && !editDraftSessionController.HasActiveDraft) editDraftSessionController.BeginDraftSession(); UpdateCommandServiceDraftMode(); }
+        public bool BeginEditDraftSession() { if (editDraftSessionController == null) return false; bool res = editDraftSessionController.BeginDraftSession(); NotifyStateChanged(); return res; }
+        public async Task<WorldPatch> ApplyEditDraftSessionAsync() { if (editDraftSessionController == null || !editDraftSessionController.HasActiveDraft) return null; WorldPatch patch = await editDraftSessionController.ApplyDraftSessionAsync(); UpdateCommandServiceDraftMode(); NotifyStateChanged(); return patch; }
+        public void CancelEditDraftSession() { if (editDraftSessionController == null || !editDraftSessionController.HasActiveDraft) return; editDraftSessionController.CancelDraftSession(); ResetInteractionStates(); NotifyStateChanged(); }
+        public void ClearEditDraftSession() { editDraftSessionController?.ClearDraftSession(); UpdateCommandServiceDraftMode(); NotifyStateChanged(); }
 
-            activeTool = tool;
-            ResetInteractionStates();
-
-            if (tool != BuildToolMode.Object)
-            {
-                DeselectCurrentObject();
-            }
-
-            if (tool != BuildToolMode.Path && tool != BuildToolMode.DetailPaint)
-            {
-                DeselectPathStroke();
-            }
-
-            pathDragDirty = false;
-
-            RefreshPreviewDefinition();
-            NotifyStateChanged();
-        }
-
-        public void SetLayer(BuildLayer layer)
-        {
-            if (pendingMove != null)
-            {
-                CancelPendingMoveAndRestore();
-            }
-
-            buildCatalog.SetLayer(layer);
-            activeTool = BuildToolMode.Object;
-            ResetInteractionStates();
-            RefreshPreviewDefinition();
-            NotifyStateChanged();
-        }
-
-        public void SetPaintMode(PlacementPaintMode mode)
-        {
-            if (paintMode == mode)
-            {
-                return;
-            }
-
-            paintMode = mode;
-            ResetDragStates();
-            NotifyStateChanged();
-        }
-
-        public void ResetTransientEditorState()
-        {
-            DeselectCurrentObject();
-            DeselectPathStroke();
-            pendingMove = null;
-            rotationSteps = 0;
-            activeTool = BuildToolMode.Object;
-            paintMode = PlacementPaintMode.Single;
-            ResetInteractionStates();
-            RefreshPreviewDefinition();
-            if (buildPreview != null)
-            {
-                buildPreview.SetVisible(false);
-            }
-            NotifyStateChanged();
-        }
-
-        private void RebuildCommandService()
-        {
-            buildCommandService = new BuildWorldCommandService(
-                gridBuildingSystem,
-                wallSystem,
-                pathSystem,
-                mapSaveSystem,
-                undoRedoSystem);
-        }
-
-        private void UpdateCommandServiceDraftMode()
-        {
-            if (buildCommandService != null)
-            {
-                buildCommandService.SuppressBuildVersionTracking = HasActiveEditDraft;
-            }
-        }
-
-        private void EnsureDraftSessionStarted()
-        {
-            if (editDraftSessionController != null && !editDraftSessionController.HasActiveDraft)
-            {
-                editDraftSessionController.BeginDraftSession();
-            }
-
-            UpdateCommandServiceDraftMode();
-        }
-
-        private void TouchBuildVersionIfNotDraft()
-        {
-            if (!HasActiveEditDraft)
-            {
-                mapSaveSystem?.IncrementBuildVersion();
-            }
-        }
-
-        public bool BeginEditDraftSession()
-        {
-            if (editDraftSessionController == null)
-            {
-                return false;
-            }
-
-            if (!editDraftSessionController.HasActiveDraft)
-            {
-                editDraftSessionController.BeginDraftSession();
-            }
-
-            UpdateCommandServiceDraftMode();
-            NotifyStateChanged();
-            return editDraftSessionController.HasActiveDraft;
-        }
-
-        public WorldPatch ApplyEditDraftSession()
-        {
-            if (editDraftSessionController == null || !editDraftSessionController.HasActiveDraft)
-            {
-                return null;
-            }
-
-            WorldPatch patch = editDraftSessionController.ApplyDraftSession();
-            UpdateCommandServiceDraftMode();
-            NotifyStateChanged();
-            return patch;
-        }
-
-        public void CancelEditDraftSession()
-        {
-            if (editDraftSessionController == null || !editDraftSessionController.HasActiveDraft)
-            {
-                return;
-            }
-
-            editDraftSessionController.CancelDraftSession();
-            UpdateCommandServiceDraftMode();
-            ResetInteractionStates();
-            NotifyStateChanged();
-        }
-
-        public void ClearEditDraftSession()
-        {
-            editDraftSessionController?.ClearDraftSession();
-            UpdateCommandServiceDraftMode();
-            NotifyStateChanged();
-        }
-
-        public string GetCurrentSelectionLabel()
-        {
-            switch (CurrentTool)
-            {
-                case BuildToolMode.Wall:
-                    return wallCatalog != null && wallCatalog.CurrentWall != null ? wallCatalog.CurrentWall.SafeDisplayName : "No wall selected";
-                case BuildToolMode.Door:
-                    return wallCatalog != null && wallCatalog.CurrentDoor != null ? wallCatalog.CurrentDoor.SafeDisplayName : "No door selected";
-                case BuildToolMode.Window:
-                    return wallCatalog != null && wallCatalog.CurrentWindow != null ? wallCatalog.CurrentWindow.SafeDisplayName : "No window selected";
-                case BuildToolMode.Path:
-                    if (selectedPathStroke != null)
-                    {
-                        string pointText = selectedPathPointIndex >= 0 ? $", point {selectedPathPointIndex + 1}" : string.Empty;
-                        return $"Path: {selectedPathStroke.Definition.SafeDisplayName} | width {selectedPathStroke.Width:0.##} | {selectedPathStroke.ControlPoints.Count} pts{pointText}";
-                    }
-
-                    return pathCatalog != null && pathCatalog.Current != null ? pathCatalog.Current.SafeDisplayName : "No path selected";
-                case BuildToolMode.DetailPaint:
-                    if (detailPaintBrushCatalog != null && detailPaintBrushCatalog.Current != null)
-                    {
-                        string targetLabel = selectedPathStroke != null ? $" | Target: {selectedPathStroke.Definition.SafeDisplayName}" : string.Empty;
-                        return detailPaintBrushCatalog.Current.SafeDisplayName + targetLabel;
-                    }
-
-                    return "No detail brush selected";
-                case BuildToolMode.Move:
-                    return pendingMove != null && pendingMove.definition != null ? $"Moving: {pendingMove.definition.SafeDisplayName}" : "Move";
-                default:
-                    return GetCurrentObjectDefinition() != null ? GetCurrentObjectDefinition().SafeDisplayName : "No object selected";
-            }
-        }
-
-        public string GetCurrentLayerLabel()
-        {
-            switch (CurrentTool)
-            {
-                case BuildToolMode.Wall:
-                case BuildToolMode.Door:
-                case BuildToolMode.Window:
-                    return "Walls";
-                case BuildToolMode.Path:
-                    return "Paths";
-                case BuildToolMode.DetailPaint:
-                    return "Surface Details";
-                case BuildToolMode.Move:
-                    return pendingMove != null && pendingMove.definition != null ? pendingMove.definition.layer.ToString() : buildCatalog.CurrentLayer.ToString();
-                default:
-                    return buildCatalog.CurrentLayer.ToString();
-            }
-        }
-
-        public string GetCurrentPaintModeLabel()
-        {
-            if (CurrentTool == BuildToolMode.Path)
-            {
-                return "Polyline";
-            }
-
-            if (CurrentTool == BuildToolMode.DetailPaint)
-            {
-                return "Brush";
-            }
-
-            switch (paintMode)
-            {
-                case PlacementPaintMode.Brush: return "Brush";
-                case PlacementPaintMode.Rectangle: return "Rectangle";
-                default: return "Single";
-            }
-        }
+        public async void TriggerUndo() { if (undoRedoSystem == null || !undoRedoSystem.CanUndo) return; WorldPatch bwd = undoRedoSystem.Undo(); if (bwd != null) { mapSaveSystem?.ApplyPatch(bwd); if (multiplayerEditApplyService != null) await multiplayerEditApplyService.SubmitPatchDirectAsync(bwd); } }
+        public async void TriggerRedo() { if (undoRedoSystem == null || !undoRedoSystem.CanRedo) return; WorldPatch fwd = undoRedoSystem.Redo(); if (fwd != null) { mapSaveSystem?.ApplyPatch(fwd); if (multiplayerEditApplyService != null) await multiplayerEditApplyService.SubmitPatchDirectAsync(fwd); } }
 
         private void HandleGlobalInput()
         {
@@ -431,1559 +161,164 @@ namespace MapEditorPrototype
             if (InputHelper.GetKeyDown(doorToolKey)) SetTool(BuildToolMode.Door);
             if (InputHelper.GetKeyDown(windowToolKey)) SetTool(BuildToolMode.Window);
             if (InputHelper.GetKeyDown(pathToolKey)) SetTool(BuildToolMode.Path);
-            if (InputHelper.GetKeyDown(detailPaintToolKey)) SetTool(BuildToolMode.DetailPaint);
-
-            if (InputHelper.GetKeyDown(saveKey) && buildCommandService != null)
-            {
-                buildCommandService.SaveWorld();
-            }
-
-            if (InputHelper.GetKeyDown(loadKey) && buildCommandService != null)
-            {
-                ClearEditDraftSession();
-                buildCommandService.LoadWorld();
-                return;
-            }
-
+            if (InputHelper.GetKeyDown(saveKey) && buildCommandService != null) buildCommandService.SaveWorld();
+            if (InputHelper.GetKeyDown(loadKey) && buildCommandService != null) { ClearEditDraftSession(); buildCommandService.LoadWorld(); }
+            if (InputHelper.GetKeyDown(cancelKey)) { if (pendingMove != null) CancelPendingMoveAndRestore(); else if (isPathDrawing) ResetPathDrawing(); }
             HandleSelectionInput();
-
-            if (InputHelper.GetKeyDown(cancelKey))
-            {
-                if (pendingMove != null)
-                {
-                    CancelPendingMoveAndRestore();
-                }
-                else if (isPathDrawing)
-                {
-                    ResetPathDrawing();
-                }
-            }
         }
 
         private void HandleSelectionInput()
         {
-            if (pendingMove != null)
-            {
-                return;
-            }
-
-            bool changed = false;
-            float scroll = InputHelper.MouseScrollY;
-            if (scroll > 0.01f)
-            {
-                SelectNextForCurrentTool();
-                changed = true;
-            }
-            else if (scroll < -0.01f)
-            {
-                SelectPreviousForCurrentTool();
-                changed = true;
-            }
-
-            if (CurrentTool == BuildToolMode.Object)
-            {
-                if (InputHelper.GetKeyDown(KeyCode.Alpha1)) { buildCatalog.Select(0); changed = true; }
-                if (InputHelper.GetKeyDown(KeyCode.Alpha2)) { buildCatalog.Select(1); changed = true; }
-                if (InputHelper.GetKeyDown(KeyCode.Alpha3)) { buildCatalog.Select(2); changed = true; }
-                if (InputHelper.GetKeyDown(KeyCode.Alpha4)) { buildCatalog.Select(3); changed = true; }
-                if (InputHelper.GetKeyDown(KeyCode.Alpha5)) { buildCatalog.Select(4); changed = true; }
-                if (InputHelper.GetKeyDown(KeyCode.Alpha6)) { buildCatalog.Select(5); changed = true; }
-                if (InputHelper.GetKeyDown(KeyCode.Alpha7)) { buildCatalog.Select(6); changed = true; }
-                if (InputHelper.GetKeyDown(KeyCode.Alpha8)) { buildCatalog.Select(7); changed = true; }
-                if (InputHelper.GetKeyDown(KeyCode.Alpha9)) { buildCatalog.Select(8); changed = true; }
-            }
-            else if (CurrentTool == BuildToolMode.Path && pathCatalog != null)
-            {
-                if (InputHelper.GetKeyDown(KeyCode.Alpha1)) { pathCatalog.Select(0); changed = true; }
-                if (InputHelper.GetKeyDown(KeyCode.Alpha2)) { pathCatalog.Select(1); changed = true; }
-                if (InputHelper.GetKeyDown(KeyCode.Alpha3)) { pathCatalog.Select(2); changed = true; }
-                if (InputHelper.GetKeyDown(KeyCode.Alpha4)) { pathCatalog.Select(3); changed = true; }
-                if (InputHelper.GetKeyDown(KeyCode.Alpha5)) { pathCatalog.Select(4); changed = true; }
-                if (InputHelper.GetKeyDown(KeyCode.Alpha6)) { pathCatalog.Select(5); changed = true; }
-                if (InputHelper.GetKeyDown(KeyCode.Alpha7)) { pathCatalog.Select(6); changed = true; }
-                if (InputHelper.GetKeyDown(KeyCode.Alpha8)) { pathCatalog.Select(7); changed = true; }
-                if (InputHelper.GetKeyDown(KeyCode.Alpha9)) { pathCatalog.Select(8); changed = true; }
-            }
-            else if (CurrentTool == BuildToolMode.DetailPaint && detailPaintBrushCatalog != null)
-            {
-                if (InputHelper.GetKeyDown(KeyCode.Alpha1)) { detailPaintBrushCatalog.Select(0); changed = true; }
-                if (InputHelper.GetKeyDown(KeyCode.Alpha2)) { detailPaintBrushCatalog.Select(1); changed = true; }
-                if (InputHelper.GetKeyDown(KeyCode.Alpha3)) { detailPaintBrushCatalog.Select(2); changed = true; }
-                if (InputHelper.GetKeyDown(KeyCode.Alpha4)) { detailPaintBrushCatalog.Select(3); changed = true; }
-                if (InputHelper.GetKeyDown(KeyCode.Alpha5)) { detailPaintBrushCatalog.Select(4); changed = true; }
-                if (InputHelper.GetKeyDown(KeyCode.Alpha6)) { detailPaintBrushCatalog.Select(5); changed = true; }
-                if (InputHelper.GetKeyDown(KeyCode.Alpha7)) { detailPaintBrushCatalog.Select(6); changed = true; }
-                if (InputHelper.GetKeyDown(KeyCode.Alpha8)) { detailPaintBrushCatalog.Select(7); changed = true; }
-                if (InputHelper.GetKeyDown(KeyCode.Alpha9)) { detailPaintBrushCatalog.Select(8); changed = true; }
-            }
-            else if (wallCatalog != null)
-            {
-                if (CurrentTool == BuildToolMode.Wall)
-                {
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha1)) { wallCatalog.SelectWall(0); changed = true; }
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha2)) { wallCatalog.SelectWall(1); changed = true; }
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha3)) { wallCatalog.SelectWall(2); changed = true; }
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha4)) { wallCatalog.SelectWall(3); changed = true; }
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha5)) { wallCatalog.SelectWall(4); changed = true; }
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha6)) { wallCatalog.SelectWall(5); changed = true; }
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha7)) { wallCatalog.SelectWall(6); changed = true; }
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha8)) { wallCatalog.SelectWall(7); changed = true; }
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha9)) { wallCatalog.SelectWall(8); changed = true; }
-                }
-                else if (CurrentTool == BuildToolMode.Door)
-                {
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha1)) { wallCatalog.SelectDoor(0); changed = true; }
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha2)) { wallCatalog.SelectDoor(1); changed = true; }
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha3)) { wallCatalog.SelectDoor(2); changed = true; }
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha4)) { wallCatalog.SelectDoor(3); changed = true; }
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha5)) { wallCatalog.SelectDoor(4); changed = true; }
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha6)) { wallCatalog.SelectDoor(5); changed = true; }
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha7)) { wallCatalog.SelectDoor(6); changed = true; }
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha8)) { wallCatalog.SelectDoor(7); changed = true; }
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha9)) { wallCatalog.SelectDoor(8); changed = true; }
-                }
-                else if (CurrentTool == BuildToolMode.Window)
-                {
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha1)) { wallCatalog.SelectWindow(0); changed = true; }
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha2)) { wallCatalog.SelectWindow(1); changed = true; }
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha3)) { wallCatalog.SelectWindow(2); changed = true; }
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha4)) { wallCatalog.SelectWindow(3); changed = true; }
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha5)) { wallCatalog.SelectWindow(4); changed = true; }
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha6)) { wallCatalog.SelectWindow(5); changed = true; }
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha7)) { wallCatalog.SelectWindow(6); changed = true; }
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha8)) { wallCatalog.SelectWindow(7); changed = true; }
-                    if (InputHelper.GetKeyDown(KeyCode.Alpha9)) { wallCatalog.SelectWindow(8); changed = true; }
-                }
-            }
-
-            if (changed)
-            {
-                RefreshPreviewDefinition();
-                NotifyStateChanged();
-            }
+            if (pendingMove != null) return;
+            bool changed = false; float scroll = InputHelper.MouseScrollY;
+            if (scroll > 0.01f) { SelectNextForCurrentTool(); changed = true; }
+            else if (scroll < -0.01f) { SelectPreviousForCurrentTool(); changed = true; }
+            if (changed) { RefreshPreviewDefinition(); NotifyStateChanged(); }
         }
 
         private void HandleObjectTool()
         {
-            BuildingDefinition currentDefinition = GetCurrentObjectDefinition();
-            buildPreview.SetDefinition(currentDefinition);
+            BuildingDefinition def = GetCurrentObjectDefinition();
+            buildPreview.SetDefinition(def);
+            if (!TryGetCursorContext(out CursorContext ctx)) { buildPreview.SetVisible(false); if (gridObjectPreviewManager != null) gridObjectPreviewManager.HideAll(); ResetDragStatesIfMouseReleased(); return; }
+            bool hasP = TryBuildObjectPlacement(def, ctx, out ObjectPlacementPreview p);
 
-            if (!TryGetCursorContext(out CursorContext cursorContext))
+            if (hasP && (isObjectBrushPainting || isObjectRectanglePainting) && paintMode != PlacementPaintMode.Single)
             {
                 buildPreview.SetVisible(false);
-                ResetDragStatesIfMouseReleased();
-                ResetFreeRotationTracking();
-                return;
-            }
-
-            bool hasPreview = TryBuildObjectPlacement(currentDefinition, cursorContext, out ObjectPlacementPreview preview);
-            if (hasPreview)
-            {
-                buildPreview.SetVisible(true);
-                buildPreview.UpdatePose(preview.worldPosition, Quaternion.Euler(0f, preview.yRotation, 0f), preview.canPlace);
+                List<Vector2Int> cells = isObjectBrushPainting ? GetGridLine(objectPaintStartCell, p.originCell) : GetGridRectangle(objectPaintStartCell, p.originCell);
+                gridObjectPreviewManager?.UpdatePreview(gridBuildingSystem, def, cells, rotationSteps, p.baseY);
             }
             else
             {
-                buildPreview.SetVisible(false);
+                gridObjectPreviewManager?.HideAll(); buildPreview.SetVisible(hasP);
+                if (hasP) buildPreview.UpdatePose(p.worldPosition, Quaternion.Euler(0f, p.yRotation, 0f), p.canPlace);
             }
 
-            if (HandleObjectPaintInput(currentDefinition, hasPreview, preview))
+            if (HandleObjectPaintInput(def, hasP, p)) return;
+            if (!IsPointerOverUi() && InputHelper.GetMouseButtonDown(0))
             {
-                return;
-            }
-
-            if (IsPointerOverUi())
-            {
-                return;
-            }
-
-            if (InputHelper.GetMouseButtonDown(0))
-            {
-                if (ShouldSelectHoveredObject(currentDefinition, cursorContext.hoveredPlacedObject))
-                {
-                    SelectObject(cursorContext.hoveredPlacedObject);
-                }
-                else if (hasPreview && preview.canPlace)
-                {
-                    PlaceObjectFromPreview(currentDefinition, preview);
-                }
-                else if (cursorContext.hoveredPlacedObject == null)
-                {
-                    DeselectCurrentObject();
-                }
-
+                if (ShouldSelectHoveredObject(def, ctx.hoveredPlacedObject)) SelectObject(ctx.hoveredPlacedObject);
+                else if (hasP && p.canPlace) { PlaceObjectFromPreview(def, p); FinalizeMassPlacement(); }
+                else DeselectCurrentObject();
                 NotifyStateChanged();
             }
-
             if (InputHelper.GetKeyDown(deleteKey))
             {
-                if (selectedObject != null)
-                {
-                    EnsureDraftSessionStarted();
-                    buildCommandService?.DeletePlacedObject(selectedObject, true, true);
-                    selectedObject = null;
-                }
-                else if (cursorContext.hoveredPlacedObject != null)
-                {
-                    EnsureDraftSessionStarted();
-                    buildCommandService?.DeletePlacedObject(cursorContext.hoveredPlacedObject, true, true);
-                }
-
+                if (selectedObject != null) { EnsureDraftSessionStarted(); buildCommandService?.DeletePlacedObject(selectedObject, true); selectedObject = null; FinalizeMassPlacement(); }
+                else if (ctx.hoveredPlacedObject != null) { EnsureDraftSessionStarted(); buildCommandService?.DeletePlacedObject(ctx.hoveredPlacedObject, true); FinalizeMassPlacement(); }
                 NotifyStateChanged();
             }
-
-            if (InputHelper.GetKeyDown(moveSelectedKey) && selectedObject != null)
-            {
-                StartMovingSelectedObject();
-            }
-
-            if (InputHelper.GetKeyDown(rotateKey))
-            {
-                if (selectedObject != null && pendingMove == null)
-                {
-                    RotateSelectedObject();
-                }
-                else if (currentDefinition != null && !IsFreePlacementModifierHeld())
-                {
-                    rotationSteps = (rotationSteps + 1) % 4;
-                    NotifyStateChanged();
-                }
-            }
+            if (InputHelper.GetKeyDown(rotateKey)) { if (selectedObject != null) RotateSelectedObject(); else { rotationSteps = (rotationSteps + 1) % 4; NotifyStateChanged(); } }
         }
 
         private void HandleWallTool()
         {
-            if (wallSystem == null || wallCatalog == null)
+            if (wallSystem == null || wallCatalog == null || buildPreview == null) return;
+            GameObject pf = (CurrentTool == BuildToolMode.Wall) ? wallCatalog.CurrentWall?.prefab : (CurrentTool == BuildToolMode.Door) ? wallCatalog.CurrentDoor?.prefab : wallCatalog.CurrentWindow?.prefab;
+            buildPreview.SetPrefab(pf);
+            if (!TryGetMouseWorldPosition(out Vector3 mPos) || !wallSystem.TryGetNearestEdge(mPos, out WallEdge edge, out Vector3 ePos, out Quaternion eRot)) { buildPreview.SetVisible(false); if (wallLinePreviewManager != null) wallLinePreviewManager.HideAll(); return; }
+
+            if (isWallBrushPainting && paintMode == PlacementPaintMode.Brush)
             {
-                buildPreview.SetVisible(false);
-                ResetDragStatesIfMouseReleased();
-                return;
+                buildPreview.SetVisible(false); var line = GetWallEdgeLine(wallPaintLastEdge, edge);
+                if (wallLinePreviewManager != null) { wallLinePreviewManager.SetPrefab(pf); wallLinePreviewManager.UpdatePreview(wallSystem, line); }
             }
-
-            GameObject previewPrefab = null;
-            Vector3 worldOffset = Vector3.zero;
-            bool canPlace = false;
-
-            switch (CurrentTool)
+            else if (isWallRectanglePainting && paintMode == PlacementPaintMode.Rectangle)
             {
-                case BuildToolMode.Wall:
-                    if (wallCatalog.CurrentWall != null)
-                    {
-                        previewPrefab = wallCatalog.CurrentWall.prefab;
-                        worldOffset = wallCatalog.CurrentWall.worldOffset;
-                    }
-                    break;
-                case BuildToolMode.Door:
-                    if (wallCatalog.CurrentDoor != null)
-                    {
-                        previewPrefab = wallCatalog.CurrentDoor.prefab;
-                        worldOffset = wallCatalog.CurrentDoor.worldOffset;
-                    }
-                    break;
-                case BuildToolMode.Window:
-                    if (wallCatalog.CurrentWindow != null)
-                    {
-                        previewPrefab = wallCatalog.CurrentWindow.prefab;
-                        worldOffset = wallCatalog.CurrentWindow.worldOffset;
-                    }
-                    break;
+                buildPreview.SetVisible(false); var rect = GetWallRectangleEdges(wallRectangleStartCell, gridBuildingSystem.WorldToCell(mPos, BuildLayer.Furniture));
+                if (wallLinePreviewManager != null) { wallLinePreviewManager.SetPrefab(pf); wallLinePreviewManager.UpdatePreview(wallSystem, rect); }
             }
+            else { if (wallLinePreviewManager != null) wallLinePreviewManager.HideAll(); buildPreview.SetVisible(pf != null); buildPreview.UpdatePose(ePos, eRot, true); }
 
-            buildPreview.SetPrefab(previewPrefab);
-
-            if (!TryGetMouseWorldPosition(out Vector3 mouseWorldPosition) || !wallSystem.TryGetNearestEdge(mouseWorldPosition, out WallEdge edge, out Vector3 edgePosition, out Quaternion edgeRotation))
-            {
-                buildPreview.SetVisible(false);
-                ResetDragStatesIfMouseReleased();
-                return;
-            }
-
-            if (previewPrefab != null)
-            {
-                switch (CurrentTool)
-                {
-                    case BuildToolMode.Wall:
-                        canPlace = wallSystem.CanPlaceWall(wallCatalog.CurrentWall, edge);
-                        break;
-                    case BuildToolMode.Door:
-                        canPlace = wallSystem.CanPlaceOpening(wallCatalog.CurrentDoor, edge);
-                        break;
-                    case BuildToolMode.Window:
-                        canPlace = wallSystem.CanPlaceOpening(wallCatalog.CurrentWindow, edge);
-                        break;
-                }
-
-                buildPreview.SetVisible(true);
-                buildPreview.UpdatePose(edgePosition + edgeRotation * worldOffset, edgeRotation, canPlace);
-            }
-            else
-            {
-                buildPreview.SetVisible(false);
-            }
-
-            if (HandleWallPaintInput(mouseWorldPosition, edge, canPlace))
-            {
-                return;
-            }
-
-            if (IsPointerOverUi())
-            {
-                return;
-            }
-
-            if (InputHelper.GetMouseButtonDown(0) && canPlace)
-            {
-                EnsureDraftSessionStarted();
-                PlaceWallToolAtEdge(edge);
-            }
-
-            if (InputHelper.GetKeyDown(deleteKey))
-            {
-                EnsureDraftSessionStarted();
-                buildCommandService?.RemoveWallAtEdge(edge, true);
-            }
-        }
-
-        private bool TryBuildObjectPlacement(BuildingDefinition definition, CursorContext cursorContext, out ObjectPlacementPreview preview)
-        {
-            preview = default;
-            if (definition == null)
-            {
-                ResetFreeRotationTracking();
-                return false;
-            }
-
-            if (definition.IsWallMounted)
-            {
-                ResetFreeRotationTracking();
-                return TryBuildWallMountedPlacement(definition, cursorContext, out preview);
-            }
-
-            Vector3 anchorPoint = cursorContext.hasPhysicsHit ? cursorContext.physicsHit.point : cursorContext.planePoint;
-            float baseY = gridBuildingSystem.GridOrigin.y;
-            if (ShouldUseSurfacePlacement(definition, cursorContext.hoveredPlacedObject))
-            {
-                baseY = cursorContext.hoveredPlacedObject.GetTopY() + stackedSurfacePadding;
-            }
-
-            bool preserveFreePlacement = pendingMove != null && !pendingMove.useGridPlacement;
-            bool useFreePlacement = definition.allowAltFreePlacement && (IsFreePlacementModifierHeld() || preserveFreePlacement);
-            preview.useGridPlacement = !useFreePlacement;
-            preview.baseY = baseY;
-
-            if (useFreePlacement)
-            {
-                preview.originCell = gridBuildingSystem.WorldToCell(anchorPoint, definition.layer);
-                preview.worldPosition = new Vector3(anchorPoint.x, baseY, anchorPoint.z) + definition.worldOffset;
-                preview.yRotation = UpdateAndGetFreeRotation(anchorPoint, pendingMove != null ? pendingMove.rotationY : GetSnappedRotationY(rotationSteps));
-                preview.canPlace = true;
-                return true;
-            }
-
-            ResetFreeRotationTracking();
-            Vector2Int rotatedFootprint = GridBuildingSystem.RotateFootprint(definition.Footprint, rotationSteps);
-            preview.originCell = gridBuildingSystem.WorldToCell(anchorPoint, definition.layer);
-            preview.worldPosition = gridBuildingSystem.GetPlacementPosition(preview.originCell, rotatedFootprint, definition.worldOffset, definition.layer, baseY);
-            preview.yRotation = GetSnappedRotationY(rotationSteps);
-            preview.canPlace = gridBuildingSystem.CanPlace(definition, preview.originCell, rotationSteps, baseY);
-            return true;
-        }
-
-        private bool TryBuildWallMountedPlacement(BuildingDefinition definition, CursorContext cursorContext, out ObjectPlacementPreview preview)
-        {
-            preview = default;
-            if (wallSystem == null)
-            {
-                return false;
-            }
-
-            Vector3 sourcePoint = cursorContext.hasPhysicsHit ? cursorContext.physicsHit.point : cursorContext.planePoint;
-            if (!wallSystem.TryGetNearestEdge(sourcePoint, out WallEdge edge, out Vector3 edgePosition, out Quaternion edgeRotation))
-            {
-                return false;
-            }
-
-            WallSegment segment = wallSystem.GetSegment(edge);
-            preview.useGridPlacement = false;
-            preview.originCell = gridBuildingSystem.WorldToCell(edgePosition, definition.layer);
-            preview.worldPosition = edgePosition + edgeRotation * definition.worldOffset;
-            preview.baseY = preview.worldPosition.y - definition.worldOffset.y;
-            preview.yRotation = edgeRotation.eulerAngles.y;
-            preview.canPlace = segment != null && segment.WallDefinition != null && segment.OpeningDefinition == null;
-            return true;
-        }
-
-        private bool HandleObjectPaintInput(BuildingDefinition definition, bool hasPreview, ObjectPlacementPreview preview)
-        {
-            if (!CanUseObjectPaintMode(definition, hasPreview))
-            {
-                ResetObjectPaintIfMouseReleased();
-                return false;
-            }
-
-            if (IsPointerOverUi())
-            {
-                ResetObjectPaintIfMouseReleased();
-                return false;
-            }
-
-            switch (paintMode)
-            {
-                case PlacementPaintMode.Brush:
-                    return HandleObjectBrushPaint(definition, preview);
-                case PlacementPaintMode.Rectangle:
-                    return HandleObjectRectanglePaint(definition, preview);
-                default:
-                    ResetObjectPaintIfMouseReleased();
-                    return false;
-            }
-        }
-
-        private bool HandleWallPaintInput(Vector3 mouseWorldPosition, WallEdge currentEdge, bool canPlaceCurrentEdge)
-        {
-            if (CurrentTool != BuildToolMode.Wall || wallCatalog == null || wallCatalog.CurrentWall == null)
-            {
-                ResetWallPaintIfMouseReleased();
-                return false;
-            }
-
-            if (IsPointerOverUi())
-            {
-                ResetWallPaintIfMouseReleased();
-                return false;
-            }
-
-            switch (paintMode)
-            {
-                case PlacementPaintMode.Brush:
-                    return HandleWallBrushPaint(currentEdge, canPlaceCurrentEdge);
-                case PlacementPaintMode.Rectangle:
-                    return HandleWallRectanglePaint(gridBuildingSystem.WorldToCell(mouseWorldPosition, BuildLayer.Furniture));
-                default:
-                    ResetWallPaintIfMouseReleased();
-                    return false;
-            }
-        }
-
-        private bool HandleObjectBrushPaint(BuildingDefinition definition, ObjectPlacementPreview preview)
-        {
-            if (InputHelper.GetMouseButtonDown(0))
-            {
-                isObjectBrushPainting = true;
-                dragSessionRecordedChange = false;
-                objectPaintStartCell = preview.originCell;
-                objectPaintLastCell = preview.originCell;
-                objectPaintBaseY = preview.baseY;
-                TryPaintGridCell(definition, preview.originCell, objectPaintBaseY);
-                return true;
-            }
-
-            if (isObjectBrushPainting && InputHelper.GetMouseButton(0))
-            {
-                PaintObjectLine(definition, objectPaintLastCell, preview.originCell, objectPaintBaseY);
-                objectPaintLastCell = preview.originCell;
-                return true;
-            }
-
-            if (InputHelper.GetMouseButtonUp(0))
-            {
-                isObjectBrushPainting = false;
-                dragSessionRecordedChange = false;
-                return true;
-            }
-
-            return isObjectBrushPainting;
-        }
-
-        private bool HandleObjectRectanglePaint(BuildingDefinition definition, ObjectPlacementPreview preview)
-        {
-            if (InputHelper.GetMouseButtonDown(0))
-            {
-                isObjectRectanglePainting = true;
-                dragSessionRecordedChange = false;
-                objectPaintStartCell = preview.originCell;
-                objectPaintBaseY = preview.baseY;
-                return true;
-            }
-
-            if (isObjectRectanglePainting && InputHelper.GetMouseButtonUp(0))
-            {
-                PaintObjectRectangle(definition, objectPaintStartCell, preview.originCell, objectPaintBaseY);
-                isObjectRectanglePainting = false;
-                dragSessionRecordedChange = false;
-                return true;
-            }
-
-            return isObjectRectanglePainting;
-        }
-
-        private bool HandleWallBrushPaint(WallEdge currentEdge, bool canPlaceCurrentEdge)
-        {
-            if (InputHelper.GetMouseButtonDown(0))
-            {
-                isWallBrushPainting = true;
-                dragSessionRecordedChange = false;
-                wallPaintLastEdge = currentEdge;
-                if (canPlaceCurrentEdge)
-                {
-                    TryPaintWallEdge(currentEdge);
-                }
-                return true;
-            }
-
-            if (isWallBrushPainting && InputHelper.GetMouseButton(0))
-            {
-                PaintWallLine(wallPaintLastEdge, currentEdge);
-                wallPaintLastEdge = currentEdge;
-                return true;
-            }
-
-            if (InputHelper.GetMouseButtonUp(0))
-            {
-                isWallBrushPainting = false;
-                dragSessionRecordedChange = false;
-                return true;
-            }
-
-            return isWallBrushPainting;
-        }
-
-        private bool HandleWallRectanglePaint(Vector2Int currentCell)
-        {
-            if (InputHelper.GetMouseButtonDown(0))
-            {
-                isWallRectanglePainting = true;
-                dragSessionRecordedChange = false;
-                wallRectangleStartCell = currentCell;
-                return true;
-            }
-
-            if (isWallRectanglePainting && InputHelper.GetMouseButtonUp(0))
-            {
-                PaintWallRectangle(wallRectangleStartCell, currentCell);
-                isWallRectanglePainting = false;
-                dragSessionRecordedChange = false;
-                return true;
-            }
-
-            return isWallRectanglePainting;
-        }
-
-        private void PaintObjectLine(BuildingDefinition definition, Vector2Int from, Vector2Int to, float baseY)
-        {
-            List<Vector2Int> cells = GetGridLine(from, to);
-            for (int i = 0; i < cells.Count; i++)
-            {
-                TryPaintGridCell(definition, cells[i], baseY);
-            }
-        }
-
-        private void PaintObjectRectangle(BuildingDefinition definition, Vector2Int from, Vector2Int to, float baseY)
-        {
-            int minX = Mathf.Min(from.x, to.x);
-            int maxX = Mathf.Max(from.x, to.x);
-            int minY = Mathf.Min(from.y, to.y);
-            int maxY = Mathf.Max(from.y, to.y);
-
-            for (int x = minX; x <= maxX; x++)
-            {
-                for (int y = minY; y <= maxY; y++)
-                {
-                    TryPaintGridCell(definition, new Vector2Int(x, y), baseY);
-                }
-            }
-        }
-
-        private void PaintWallLine(WallEdge from, WallEdge to)
-        {
-            if (from.orientation != to.orientation)
-            {
-                TryPaintWallEdge(to);
-                return;
-            }
-
-            if (from.orientation == WallOrientation.Horizontal)
-            {
-                int fixedY = from.y;
-                int startX = Mathf.Min(from.x, to.x);
-                int endX = Mathf.Max(from.x, to.x);
-                for (int x = startX; x <= endX; x++)
-                {
-                    TryPaintWallEdge(new WallEdge(x, fixedY, WallOrientation.Horizontal));
-                }
-            }
-            else
-            {
-                int fixedX = from.x;
-                int startY = Mathf.Min(from.y, to.y);
-                int endY = Mathf.Max(from.y, to.y);
-                for (int y = startY; y <= endY; y++)
-                {
-                    TryPaintWallEdge(new WallEdge(fixedX, y, WallOrientation.Vertical));
-                }
-            }
-        }
-
-        private void PaintWallRectangle(Vector2Int from, Vector2Int to)
-        {
-            int minX = Mathf.Min(from.x, to.x);
-            int maxX = Mathf.Max(from.x, to.x);
-            int minY = Mathf.Min(from.y, to.y);
-            int maxY = Mathf.Max(from.y, to.y);
-
-            for (int x = minX; x <= maxX; x++)
-            {
-                TryPaintWallEdge(new WallEdge(x, minY, WallOrientation.Horizontal));
-                TryPaintWallEdge(new WallEdge(x, maxY + 1, WallOrientation.Horizontal));
-            }
-
-            for (int y = minY; y <= maxY; y++)
-            {
-                TryPaintWallEdge(new WallEdge(minX, y, WallOrientation.Vertical));
-                TryPaintWallEdge(new WallEdge(maxX + 1, y, WallOrientation.Vertical));
-            }
-        }
-
-        private void TryPaintGridCell(BuildingDefinition definition, Vector2Int cell, float baseY)
-        {
-            if (buildCommandService == null)
-            {
-                return;
-            }
-
-            if (!gridBuildingSystem.CanPlace(definition, cell, rotationSteps, baseY))
-            {
-                return;
-            }
-
-            RecordDragChangeIfNeeded();
-            buildCommandService.TryPaintGridCell(definition, cell, rotationSteps, baseY, GetSnappedRotationY(rotationSteps));
-        }
-
-        private void TryPaintWallEdge(WallEdge edge)
-        {
-            if (wallCatalog == null || wallCatalog.CurrentWall == null || buildCommandService == null)
-            {
-                return;
-            }
-
-            if (!wallSystem.CanPlaceWall(wallCatalog.CurrentWall, edge))
-            {
-                return;
-            }
-
-            RecordDragChangeIfNeeded();
-            buildCommandService.TryPaintWallEdge(wallCatalog.CurrentWall, edge);
-        }
-
-        private void RecordDragChangeIfNeeded()
-        {
-            if (dragSessionRecordedChange)
-            {
-                return;
-            }
-
-            EnsureDraftSessionStarted();
-            buildCommandService?.RecordUndoState();
-            dragSessionRecordedChange = true;
-        }
-
-        private void PlaceObjectFromPreview(BuildingDefinition definition, ObjectPlacementPreview preview)
-        {
-            bool isMovePlacement = pendingMove != null;
-            if (isMovePlacement)
-            {
-                if (pendingMove != null && !string.IsNullOrWhiteSpace(pendingMove.undoSnapshotJson))
-                {
-                    buildCommandService?.RecordUndoSnapshot(pendingMove.undoSnapshotJson);
-                }
-            }
-
-            EnsureDraftSessionStarted();
-
-            PlacedObject placedObject = preview.useGridPlacement
-                ? buildCommandService != null ? buildCommandService.PlaceGridObject(definition, preview.originCell, rotationSteps, preview.baseY, preview.yRotation, !isMovePlacement) : null
-                : buildCommandService != null ? buildCommandService.PlaceFreeObject(definition, preview.worldPosition, rotationSteps, preview.yRotation, !isMovePlacement) : null;
-
-            if (placedObject == null)
-            {
-                return;
-            }
-
-            pendingMove = null;
-            activeTool = BuildToolMode.Object;
-            SelectObject(placedObject);
-            rotationSteps = placedObject.RotationSteps;
-            ResetFreeRotationTracking();
-            RefreshPreviewDefinition();
-        }
-
-        private void PlaceWallToolAtEdge(WallEdge edge)
-        {
-            if (buildCommandService == null)
-            {
-                return;
-            }
-
-            switch (CurrentTool)
-            {
-                case BuildToolMode.Wall:
-                    buildCommandService.PlaceWall(wallCatalog.CurrentWall, edge, true);
-                    break;
-                case BuildToolMode.Door:
-                    buildCommandService.PlaceOpening(wallCatalog.CurrentDoor, edge, true);
-                    break;
-                case BuildToolMode.Window:
-                    buildCommandService.PlaceOpening(wallCatalog.CurrentWindow, edge, true);
-                    break;
-            }
-        }
-
-        private void StartMovingSelectedObject()
-        {
-            if (selectedObject == null || selectedObject.Definition == null)
-            {
-                return;
-            }
-
-            EnsureDraftSessionStarted();
-            string undoSnapshotJson = mapSaveSystem != null ? mapSaveSystem.CaptureCurrentStateJson() : null;
-
-            pendingMove = new PendingMoveState
-            {
-                definition = selectedObject.Definition,
-                originCell = selectedObject.OriginCell,
-                rotationSteps = selectedObject.RotationSteps,
-                rotationY = selectedObject.RotationY,
-                useGridPlacement = selectedObject.UsesGridPlacement,
-                baseY = selectedObject.BaseY,
-                worldPosition = selectedObject.transform.position,
-                undoSnapshotJson = undoSnapshotJson
-            };
-
-            rotationSteps = pendingMove.rotationSteps;
-            buildCatalog.Select(selectedObject.Definition);
-            gridBuildingSystem.Remove(selectedObject);
-            selectedObject = null;
-            activeTool = BuildToolMode.Object;
-            ResetInteractionStates();
-            RefreshPreviewDefinition();
-            NotifyStateChanged();
-        }
-
-        private void CancelPendingMoveAndRestore()
-        {
-            if (pendingMove == null)
-            {
-                return;
-            }
-
-            PlacedObject restoredObject = pendingMove.useGridPlacement
-                ? gridBuildingSystem.Place(pendingMove.definition, pendingMove.originCell, pendingMove.rotationSteps, pendingMove.baseY, pendingMove.rotationY)
-                : gridBuildingSystem.PlaceFree(pendingMove.definition, pendingMove.worldPosition, pendingMove.rotationSteps, pendingMove.rotationY);
-
-            pendingMove = null;
-            rotationSteps = 0;
-            activeTool = BuildToolMode.Object;
-            ResetInteractionStates();
-            RefreshPreviewDefinition();
-
-            if (restoredObject != null)
-            {
-                SelectObject(restoredObject);
-            }
-
-            NotifyStateChanged();
-        }
-
-        private void RotateSelectedObject()
-        {
-            if (selectedObject == null)
-            {
-                return;
-            }
-
-            EnsureDraftSessionStarted();
-            int newRotation = (selectedObject.RotationSteps + 1) % 4;
-            float newRotationY = GetSnappedRotationY(newRotation);
-            undoRedoSystem?.RecordStateBeforeChange();
-
-            bool rotated = selectedObject.UsesGridPlacement
-                ? gridBuildingSystem.TryReposition(selectedObject, selectedObject.OriginCell, newRotation, selectedObject.BaseY, newRotationY)
-                : gridBuildingSystem.TryRepositionFree(selectedObject, selectedObject.transform.position, newRotation, newRotationY);
-
-            if (rotated)
-            {
-                rotationSteps = newRotation;
-                TouchBuildVersionIfNotDraft();
-                NotifyStateChanged();
-            }
+            if (HandleWallPaintInput(mPos, edge, true)) return;
+            if (!IsPointerOverUi() && InputHelper.GetMouseButtonDown(0)) { EnsureDraftSessionStarted(); buildCommandService?.PlaceWall(wallCatalog.CurrentWall, edge, true); FinalizeMassPlacement(); }
         }
 
         private void HandlePathTool()
         {
-            if (pathSystem == null)
-            {
-                buildPreview.SetVisible(false);
-                if (pathPreviewRenderer != null)
-                {
-                    pathPreviewRenderer.SetVisible(false);
-                }
-                pathEditingHandlesRenderer?.Hide();
-                return;
+            if (pathSystem == null) { buildPreview.SetVisible(false); pathPreviewRenderer?.SetVisible(false); pathEditingHandlesRenderer?.Hide(); return; }
+            buildPreview.SetVisible(false); bool hasC = TryGetCursorContext(out CursorContext ctx);
+            float pW = selectedPathStroke?.Width ?? pathCatalog?.Current?.defaultWidth ?? 1f, pY = pathCatalog?.Current?.yOffset ?? 0.02f;
+            Vector3 curPt = hasC ? ctx.planePoint + Vector3.up * pY : Vector3.zero;
+
+            if (pathPreviewRenderer != null && isPathDrawing && activePathPoints.Count > 0 && hasC) pathPreviewRenderer.UpdatePreview(activePathPoints, curPt, pW); else pathPreviewRenderer?.SetVisible(false);
+            if (selectedPathStroke != null) pathEditingHandlesRenderer?.Show(selectedPathStroke, selectedPathPointIndex, ctx.hoveredPathHandleMarker, selectedPathWidthSegmentIndex); else pathEditingHandlesRenderer?.Hide();
+            if (IsPointerOverUi()) return;
+            if (selectedPathStroke != null) HandleSelectedPathShortcuts();
+
+            if (hasC && selectedPathStroke != null && isDraggingPathPoint && selectedPathPointIndex >= 0) { selectedPathStroke.SetControlPoint(selectedPathPointIndex, new Vector3(ctx.planePoint.x, selectedPathStroke.ControlPoints[selectedPathPointIndex].y, ctx.planePoint.z)); pathSystem.NotifyStrokeChanged(); }
+            if (InputHelper.GetMouseButtonUp(0)) isDraggingPathPoint = false;
+            if (InputHelper.GetMouseButtonDown(0) && hasC) {
+                if (isPathDrawing) { if (activePathPoints.Count == 0 || Vector3.Distance(activePathPoints[activePathPoints.Count - 1], curPt) > 0.05f) activePathPoints.Add(curPt); }
+                else { if (ctx.hoveredPathHandleMarker?.TargetStroke != null) { SelectPathStroke(ctx.hoveredPathHandleMarker.TargetStroke); if (ctx.hoveredPathHandleMarker.HandleType == PathHandleType.ControlPoint) { selectedPathPointIndex = ctx.hoveredPathHandleMarker.HandleIndex; isDraggingPathPoint = true; } } else if (pathCatalog?.Current != null) { DeselectPathStroke(); activePathPoints.Clear(); activePathPoints.Add(curPt); isPathDrawing = true; } }
             }
-
-            buildPreview.SetVisible(false);
-
-            bool hasCursor = TryGetCursorContext(out CursorContext cursorContext);
-            PathDefinition currentPath = pathCatalog != null ? pathCatalog.Current : null;
-            float previewWidth = selectedPathStroke != null ? selectedPathStroke.Width : currentPath != null ? currentPath.defaultWidth : 1f;
-            float previewYOffset = currentPath != null ? currentPath.yOffset : 0.02f;
-            Vector3 currentPoint = hasCursor ? cursorContext.planePoint + Vector3.up * previewYOffset : Vector3.zero;
-
-            if (pathPreviewRenderer != null && isPathDrawing && activePathPoints.Count > 0 && hasCursor)
-            {
-                pathPreviewRenderer.UpdatePreview(activePathPoints, currentPoint, previewWidth);
-            }
-            else if (pathPreviewRenderer != null)
-            {
-                pathPreviewRenderer.SetVisible(false);
-            }
-
-            PathHandleMarker hoveredHandleMarker = hasCursor && cursorContext.hoveredPathHandleMarker != null && cursorContext.hoveredPathHandleMarker.TargetStroke == selectedPathStroke
-                ? cursorContext.hoveredPathHandleMarker
-                : null;
-
-            if (selectedPathStroke != null)
-            {
-                pathEditingHandlesRenderer?.Show(selectedPathStroke, selectedPathPointIndex, hoveredHandleMarker, selectedPathWidthSegmentIndex);
-            }
-            else
-            {
-                pathEditingHandlesRenderer?.Hide();
-            }
-
-            if (IsPointerOverUi())
-            {
-                return;
-            }
-
-            if (selectedPathStroke != null)
-            {
-                HandleSelectedPathShortcuts();
-            }
-
-            if (hasCursor && selectedPathStroke != null)
-            {
-                if (isDraggingPathPoint && selectedPathPointIndex >= 0)
-                {
-                    Vector3 draggedPoint = new Vector3(cursorContext.planePoint.x, selectedPathStroke.ControlPoints[selectedPathPointIndex].y, cursorContext.planePoint.z);
-                    selectedPathStroke.SetControlPoint(selectedPathPointIndex, draggedPoint);
-                    pathDragDirty = true;
-                    pathSystem.NotifyStrokeChanged();
-                    pathEditingHandlesRenderer?.Show(selectedPathStroke, selectedPathPointIndex, hoveredHandleMarker, selectedPathWidthSegmentIndex);
-                }
-                else if (isDraggingPathWidthHandle)
-                {
-                    float newWidth = selectedPathStroke.CalculateWidthFromSegmentHandlePosition(selectedPathWidthSegmentIndex, cursorContext.planePoint);
-                    if (InputHelper.GetKey(KeyCode.LeftShift) || InputHelper.GetKey(KeyCode.RightShift))
-                    {
-                        newWidth = Mathf.Round(newWidth / pathWidthStep) * pathWidthStep;
-                    }
-
-                    selectedPathStroke.SetWidth(Mathf.Max(0.1f, newWidth));
-                    pathDragDirty = true;
-                    pathSystem.NotifyStrokeChanged();
-                    pathEditingHandlesRenderer?.Show(selectedPathStroke, selectedPathPointIndex, hoveredHandleMarker, selectedPathWidthSegmentIndex);
-                }
-            }
-
-            if (InputHelper.GetMouseButtonUp(0))
-            {
-                if ((isDraggingPathPoint || isDraggingPathWidthHandle) && pathDragDirty)
-                {
-                    mapSaveSystem?.IncrementBuildVersion();
-                }
-
-                isDraggingPathPoint = false;
-                isDraggingPathWidthHandle = false;
-                selectedPathWidthSegmentIndex = -1;
-                pathDragDirty = false;
-            }
-
-            if (InputHelper.GetMouseButtonDown(0) && hasCursor)
-            {
-                if (isPathDrawing)
-                {
-                    if (activePathPoints.Count == 0 || Vector3.Distance(activePathPoints[activePathPoints.Count - 1], currentPoint) > 0.05f)
-                    {
-                        activePathPoints.Add(currentPoint);
-                    }
-
-                    if (pathPreviewRenderer != null)
-                    {
-                        pathPreviewRenderer.UpdatePreview(activePathPoints, currentPoint, previewWidth);
-                    }
-                }
-                else
-                {
-                    PathHandleMarker hoveredHandle = cursorContext.hoveredPathHandleMarker;
-                    if (hoveredHandle != null && hoveredHandle.TargetStroke != null)
-                    {
-                        SelectPathStroke(hoveredHandle.TargetStroke);
-
-                        if (hoveredHandle.HandleType == PathHandleType.ControlPoint)
-                        {
-                            EnsureDraftSessionStarted();
-                            selectedPathPointIndex = hoveredHandle.HandleIndex;
-                            selectedPathWidthSegmentIndex = -1;
-                            isDraggingPathPoint = true;
-                            isDraggingPathWidthHandle = false;
-                            undoRedoSystem?.RecordStateBeforeChange();
-                        }
-                        else if (hoveredHandle.HandleType == PathHandleType.InsertPoint)
-                        {
-                            if (selectedPathStroke != null && selectedPathStroke.TryGetSegmentMidpoint(hoveredHandle.HandleIndex, out Vector3 midpoint))
-                            {
-                                EnsureDraftSessionStarted();
-                                if (buildCommandService != null && buildCommandService.InsertPathPoint(selectedPathStroke, hoveredHandle.HandleIndex, midpoint, out int insertedIndex, true))
-                                {
-                                    selectedPathPointIndex = insertedIndex;
-                                    selectedPathWidthSegmentIndex = -1;
-                                    isDraggingPathPoint = true;
-                                    isDraggingPathWidthHandle = false;
-                                }
-                            }
-                        }
-                        else if (hoveredHandle.HandleType == PathHandleType.Width)
-                        {
-                            EnsureDraftSessionStarted();
-                            selectedPathPointIndex = -1;
-                            selectedPathWidthSegmentIndex = hoveredHandle.HandleIndex;
-                            isDraggingPathPoint = false;
-                            isDraggingPathWidthHandle = true;
-                            undoRedoSystem?.RecordStateBeforeChange();
-                        }
-                    }
-                    else if (cursorContext.hoveredPathStroke != null)
-                    {
-                        SelectPathStroke(cursorContext.hoveredPathStroke);
-                        selectedPathPointIndex = -1;
-                        selectedPathWidthSegmentIndex = -1;
-                    }
-                    else if (currentPath != null)
-                    {
-                        DeselectPathStroke();
-                        activePathPoints.Clear();
-                        activePathPoints.Add(currentPoint);
-                        isPathDrawing = true;
-                    }
-                    else
-                    {
-                        DeselectPathStroke();
-                    }
-                }
-
-                NotifyStateChanged();
-            }
-
-            if (InputHelper.GetKeyDown(KeyCode.Return))
-            {
-                FinalizeOrCancelPath();
-            }
-
-            if (InputHelper.GetKeyDown(KeyCode.Backspace))
-            {
-                if (isPathDrawing && activePathPoints.Count > 0)
-                {
-                    activePathPoints.RemoveAt(activePathPoints.Count - 1);
-                    if (activePathPoints.Count == 0)
-                    {
-                        ResetPathDrawing();
-                    }
-                }
-                else if (selectedPathStroke != null && selectedPathPointIndex >= 0)
-                {
-                    RemoveSelectedPathPoint();
-                }
-            }
+            if (InputHelper.GetKeyDown(KeyCode.Return)) FinalizeOrCancelPath();
+            if (InputHelper.GetKeyDown(KeyCode.Backspace)) { if (isPathDrawing && activePathPoints.Count > 0) activePathPoints.RemoveAt(activePathPoints.Count - 1); else if (selectedPathStroke != null && selectedPathPointIndex >= 0) RemoveSelectedPathPoint(); }
         }
 
-        private void HandleSelectedPathShortcuts()
-        {
-            if (selectedPathStroke == null)
-            {
-                return;
-            }
+        private void HandleSelectedPathShortcuts() { if (selectedPathStroke == null) return; if (InputHelper.GetKeyDown(increasePathWidthKey)) { buildCommandService?.UpdatePathWidth(selectedPathStroke, selectedPathStroke.Width + pathWidthStep, true); FinalizeMassPlacement(); } if (InputHelper.GetKeyDown(deleteSelectedPathKey) || InputHelper.GetKeyDown(deleteKey)) DeleteSelectedPath(); }
+        private void FinalizeOrCancelPath() { if (!isPathDrawing) return; if (activePathPoints.Count >= 2 && pathCatalog?.Current != null) { EnsureDraftSessionStarted(); PathStroke s = buildCommandService?.CreatePath(pathCatalog.Current, activePathPoints, pathCatalog.Current.defaultWidth, true); if (s != null) { RegisterForSync(s); SelectPathStroke(s); FinalizeMassPlacement(); } } ResetPathDrawing(); NotifyStateChanged(); }
+        private void ResetPathDrawing() { isPathDrawing = false; activePathPoints.Clear(); pathPreviewRenderer?.SetVisible(false); }
+        public void DeleteSelectedPath() { if (selectedPathStroke == null) return; EnsureDraftSessionStarted(); RegisterForSyncDelete(selectedPathStroke); buildCommandService?.DeletePath(selectedPathStroke, true); DeselectPathStroke(); FinalizeMassPlacement(); NotifyStateChanged(); }
+        private void SelectPathStroke(PathStroke s) { DeselectPathStroke(); selectedPathStroke = s; if (s != null) s.SetSelected(true); NotifyStateChanged(); }
+        private void DeselectPathStroke() { if (selectedPathStroke != null) selectedPathStroke.SetSelected(false); selectedPathStroke = null; }
+        private void RemoveSelectedPathPoint() { if (selectedPathStroke != null && selectedPathPointIndex >= 0) { EnsureDraftSessionStarted(); buildCommandService.RemovePathPoint(selectedPathStroke, selectedPathPointIndex, true); FinalizeMassPlacement(); NotifyStateChanged(); } }
 
-            if (InputHelper.GetKeyDown(increasePathWidthKey))
-            {
-                EnsureDraftSessionStarted();
-                buildCommandService?.UpdatePathWidth(selectedPathStroke, selectedPathStroke.Width + pathWidthStep, true);
-                NotifyStateChanged();
-            }
+        private void CancelPendingMoveAndRestore() { if (pendingMove == null) return; var obj = gridBuildingSystem.Place(pendingMove.definition, pendingMove.originCell, pendingMove.rotationSteps, pendingMove.baseY, pendingMove.rotationY); pendingMove = null; if (obj != null) SelectObject(obj); NotifyStateChanged(); }
+        private void PlaceObjectFromPreview(BuildingDefinition def, ObjectPlacementPreview p) { EnsureDraftSessionStarted(); var obj = buildCommandService?.PlaceGridObject(def, p.originCell, rotationSteps, p.baseY, p.yRotation, true); if (obj != null) { RegisterForSync(obj); SelectObject(obj); } }
+        private void RotateSelectedObject() { if (selectedObject == null) return; int nr = (selectedObject.RotationSteps + 1) % 4; if (gridBuildingSystem.TryReposition(selectedObject, selectedObject.OriginCell, nr, selectedObject.BaseY, nr * 90f)) { RegisterForSync(selectedObject); rotationSteps = nr; FinalizeMassPlacement(); NotifyStateChanged(); } }
 
-            if (InputHelper.GetKeyDown(decreasePathWidthKey))
-            {
-                EnsureDraftSessionStarted();
-                buildCommandService?.UpdatePathWidth(selectedPathStroke, Mathf.Max(0.1f, selectedPathStroke.Width - pathWidthStep), true);
-                NotifyStateChanged();
-            }
-
-            if (InputHelper.GetKeyDown(deleteSelectedPathKey) || InputHelper.GetKeyDown(deleteKey))
-            {
-                if (selectedPathPointIndex >= 0)
-                {
-                    RemoveSelectedPathPoint();
-                }
-                else
-                {
-                    DeleteSelectedPath();
-                }
-            }
+        private bool TryBuildObjectPlacement(BuildingDefinition def, CursorContext ctx, out ObjectPlacementPreview p) {
+            p = default; if (def == null) return false;
+            Vector3 anchor = ctx.hasPhysicsHit ? ctx.physicsHit.point : ctx.planePoint;
+            float baseY = gridBuildingSystem.GridOrigin.y; if (ShouldUseSurfacePlacement(def, ctx.hoveredPlacedObject)) baseY = ctx.hoveredPlacedObject.GetWorldBounds().max.y + stackedSurfacePadding;
+            p.useGridPlacement = true; p.baseY = baseY; Vector2Int rotF = GridBuildingSystem.RotateFootprint(def.Footprint, rotationSteps); p.originCell = gridBuildingSystem.WorldToCell(anchor, def.layer); p.worldPosition = gridBuildingSystem.GetPlacementPosition(p.originCell, rotF, def.worldOffset, def.layer, baseY); p.yRotation = rotationSteps * 90f; p.canPlace = gridBuildingSystem.CanPlace(def, p.originCell, rotationSteps, baseY); return true;
         }
 
-        private void HandleDetailPaintTool()
-        {
-            buildPreview.SetVisible(false);
-            pathEditingHandlesRenderer?.Hide();
-            if (pathPreviewRenderer != null)
-            {
-                pathPreviewRenderer.SetVisible(false);
-            }
-
-            if (detailPaintBrushCatalog == null || detailPaintBrushCatalog.Current == null)
-            {
-                detailPaintStrokeRecordedUndo = false;
-                return;
-            }
-
-            if (!TryGetCursorContext(out CursorContext cursorContext))
-            {
-                detailPaintStrokeRecordedUndo = false;
-                return;
-            }
-
-            if (IsPointerOverUi())
-            {
-                if (InputHelper.GetMouseButtonUp(0) || InputHelper.GetMouseButtonUp(1) || (!InputHelper.GetMouseButton(0) && !InputHelper.GetMouseButton(1)))
-                {
-                    detailPaintStrokeRecordedUndo = false;
-                }
-                return;
-            }
-
-            if (cursorContext.hasPhysicsHit)
-            {
-                DetailPaintableSurface surface = cursorContext.physicsHit.collider != null
-                    ? cursorContext.physicsHit.collider.GetComponentInParent<DetailPaintableSurface>()
-                    : null;
-
-                if (surface != null)
-                {
-                    if (selectedPathStroke != null)
-                    {
-                        IPaintSurfaceOwner owner = surface.GetComponentInParent<IPaintSurfaceOwner>();
-                        if (!ReferenceEquals(owner, selectedPathStroke))
-                        {
-                            if (InputHelper.GetMouseButtonUp(0) || InputHelper.GetMouseButtonUp(1) || (!InputHelper.GetMouseButton(0) && !InputHelper.GetMouseButton(1)))
-                            {
-                                detailPaintStrokeRecordedUndo = false;
-                            }
-                            return;
-                        }
-                    }
-
-                    bool paint = InputHelper.GetMouseButton(0);
-                    bool erase = InputHelper.GetMouseButton(1);
-                    if ((paint || erase) && !detailPaintStrokeRecordedUndo)
-                    {
-                        EnsureDraftSessionStarted();
-                        buildCommandService?.RecordUndoState();
-                        detailPaintStrokeRecordedUndo = true;
-                    }
-
-                    if (paint)
-                    {
-                        buildCommandService?.PaintDetail(surface, cursorContext.physicsHit, detailPaintBrushCatalog.Current, false, false);
-                    }
-                    else if (erase)
-                    {
-                        buildCommandService?.PaintDetail(surface, cursorContext.physicsHit, detailPaintBrushCatalog.Current, true, false);
-                    }
-                }
-            }
-
-            if (InputHelper.GetMouseButtonUp(0) || InputHelper.GetMouseButtonUp(1) || (!InputHelper.GetMouseButton(0) && !InputHelper.GetMouseButton(1)))
-            {
-                detailPaintStrokeRecordedUndo = false;
-            }
-        }
-
-        private void FinalizeOrCancelPath()
-        {
-            if (!isPathDrawing)
-            {
-                return;
-            }
-
-            if (pathPreviewRenderer != null)
-            {
-                pathPreviewRenderer.SetVisible(false);
-            }
-
-            if (activePathPoints.Count >= 2 && pathCatalog != null && pathCatalog.Current != null)
-            {
-                EnsureDraftSessionStarted();
-                PathStroke createdStroke = buildCommandService != null
-                    ? buildCommandService.CreatePath(pathCatalog.Current, activePathPoints, pathCatalog.Current.defaultWidth, true)
-                    : null;
-                if (createdStroke != null)
-                {
-                    SelectPathStroke(createdStroke);
-                }
-            }
-
-            ResetPathDrawing();
-            NotifyStateChanged();
-        }
-
-        private void ResetPathDrawing()
-        {
-            isPathDrawing = false;
-            activePathPoints.Clear();
-            if (pathPreviewRenderer != null)
-            {
-                pathPreviewRenderer.SetVisible(false);
-            }
-        }
-
-        public void DeleteSelectedPath()
-        {
-            if (selectedPathStroke == null)
-            {
-                return;
-            }
-
-            EnsureDraftSessionStarted();
-            PathStroke pathToRemove = selectedPathStroke;
-            DeselectPathStroke();
-            buildCommandService?.DeletePath(pathToRemove, true);
-            NotifyStateChanged();
-        }
-
-        private void SelectPathStroke(PathStroke stroke)
-        {
-            if (selectedPathStroke == stroke)
-            {
-                return;
-            }
-
-            DeselectPathStroke();
-            selectedPathStroke = stroke;
-            selectedPathPointIndex = -1;
-            selectedPathWidthSegmentIndex = -1;
-
-            if (selectedPathStroke != null)
-            {
-                selectedPathStroke.SetSelected(true);
-                pathEditingHandlesRenderer?.Show(selectedPathStroke, selectedPathPointIndex, null, selectedPathWidthSegmentIndex);
-            }
-        }
-
-        private void DeselectPathStroke()
-        {
-            if (selectedPathStroke != null)
-            {
-                selectedPathStroke.SetSelected(false);
-            }
-
-            selectedPathStroke = null;
-            selectedPathPointIndex = -1;
-            selectedPathWidthSegmentIndex = -1;
-            isDraggingPathPoint = false;
-            isDraggingPathWidthHandle = false;
-            pathEditingHandlesRenderer?.Hide();
-        }
-
-        private void RemoveSelectedPathPoint()
-        {
-            if (selectedPathStroke == null || selectedPathPointIndex < 0 || buildCommandService == null)
-            {
-                return;
-            }
-
-            EnsureDraftSessionStarted();
-            selectedPathWidthSegmentIndex = -1;
-            PathStroke stroke = selectedPathStroke;
-            int pointIndex = selectedPathPointIndex;
-            bool removed = buildCommandService.RemovePathPoint(stroke, pointIndex, true);
-            if (!removed)
-            {
-                DeselectPathStroke();
-            }
-            else
-            {
-                selectedPathPointIndex = Mathf.Clamp(pointIndex, 0, stroke.ControlPoints.Count - 1);
-            }
-
-            NotifyStateChanged();
-        }
-
-        private bool ShouldSelectHoveredObject(BuildingDefinition currentDefinition, PlacedObject hoveredObject)
-        {
-            if (hoveredObject == null || pendingMove != null || CurrentTool != BuildToolMode.Object)
-            {
-                return false;
-            }
-
-            BuildLayer activeLayer = currentDefinition != null ? currentDefinition.layer : buildCatalog.CurrentLayer;
-            return hoveredObject.Layer == activeLayer;
-        }
-
-        private bool ShouldUseSurfacePlacement(BuildingDefinition definition, PlacedObject hoveredObject)
-        {
-            return definition != null && hoveredObject != null && definition.SupportsSurfacePlacement && hoveredObject != selectedObject;
-        }
-
-        private bool TryGetCursorContext(out CursorContext context)
-        {
-            context = default;
-            Camera activeCamera = gameModeController.ActiveCamera;
-            if (activeCamera == null)
-            {
-                return false;
-            }
-
-            context.ray = activeCamera.ScreenPointToRay(InputHelper.MousePosition);
-            Plane buildPlane = new Plane(Vector3.up, new Vector3(0f, gridBuildingSystem.GridOrigin.y, 0f));
-            if (!buildPlane.Raycast(context.ray, out float enterDistance))
-            {
-                return false;
-            }
-
-            context.planePoint = context.ray.GetPoint(enterDistance);
-            if (Physics.Raycast(context.ray, out RaycastHit hit, 1000f, placementRaycastMask, QueryTriggerInteraction.Ignore))
-            {
-                context.hasPhysicsHit = true;
-                context.physicsHit = hit;
-                context.hoveredPlacedObject = hit.collider != null ? hit.collider.GetComponentInParent<PlacedObject>() : null;
-                context.hoveredPathStroke = hit.collider != null ? hit.collider.GetComponentInParent<PathStroke>() : null;
-                context.hoveredPathHandleMarker = hit.collider != null ? hit.collider.GetComponent<PathHandleMarker>() : null;
-            }
-
-            return true;
-        }
-
-        private bool TryGetMouseWorldPosition(out Vector3 worldPosition)
-        {
-            if (TryGetCursorContext(out CursorContext context))
-            {
-                worldPosition = context.planePoint;
-                return true;
-            }
-
-            worldPosition = default;
-            return false;
-        }
-
-        private BuildingDefinition GetCurrentObjectDefinition()
-        {
-            return pendingMove != null ? pendingMove.definition : buildCatalog.Current;
-        }
-
-        private bool CanUseObjectPaintMode(BuildingDefinition definition, bool hasPreview)
-        {
-            return paintMode != PlacementPaintMode.Single
-                && pendingMove == null
-                && definition != null
-                && hasPreview
-                && definition.placementMode == BuildingPlacementMode.Grid
-                && definition.Footprint == Vector2Int.one
-                && !definition.IsWallMounted
-                && !IsFreePlacementModifierHeld();
-        }
-
-        private float GetSnappedRotationY(int steps)
-        {
-            return ((steps % 4) + 4) % 4 * 90f;
-        }
-
-        private float UpdateAndGetFreeRotation(Vector3 currentWorldPoint, float fallbackRotation)
-        {
-            if (!hasFreeRotationReference)
-            {
-                hasFreeRotationReference = true;
-                lastFreePlacementPoint = currentWorldPoint;
-                freeRotationY = fallbackRotation;
-            }
-            else
-            {
-                Vector3 delta = currentWorldPoint - lastFreePlacementPoint;
-                delta.y = 0f;
-                if (delta.sqrMagnitude >= freeRotationMinMovement * freeRotationMinMovement)
-                {
-                    freeRotationY = Mathf.Atan2(delta.x, delta.z) * Mathf.Rad2Deg;
-                    lastFreePlacementPoint = currentWorldPoint;
-                }
-            }
-
-            float result = freeRotationY;
-            if (InputHelper.GetKey(KeyCode.LeftShift) || InputHelper.GetKey(KeyCode.RightShift))
-            {
-                float snap = Mathf.Max(1f, freeRotationSnapAngle);
-                result = Mathf.Round(result / snap) * snap;
-            }
-
-            return result;
-        }
-
-        private bool IsFreePlacementModifierHeld()
-        {
-            return InputHelper.GetKey(KeyCode.LeftAlt) || InputHelper.GetKey(KeyCode.RightAlt);
-        }
-
-        private void SelectNextForCurrentTool()
-        {
-            if (CurrentTool == BuildToolMode.Object || CurrentTool == BuildToolMode.Move)
-            {
-                buildCatalog.SelectNext();
-                return;
-            }
-
-            if (CurrentTool == BuildToolMode.Path && pathCatalog != null)
-            {
-                pathCatalog.SelectNext();
-                return;
-            }
-
-            if (CurrentTool == BuildToolMode.DetailPaint && detailPaintBrushCatalog != null)
-            {
-                detailPaintBrushCatalog.SelectNext();
-                return;
-            }
-
-            if (wallCatalog == null)
-            {
-                return;
-            }
-
-            switch (CurrentTool)
-            {
-                case BuildToolMode.Wall:
-                    wallCatalog.SelectNextWall();
-                    break;
-                case BuildToolMode.Door:
-                    wallCatalog.SelectNextDoor();
-                    break;
-                case BuildToolMode.Window:
-                    wallCatalog.SelectNextWindow();
-                    break;
-            }
-        }
-
-        private void SelectPreviousForCurrentTool()
-        {
-            if (CurrentTool == BuildToolMode.Object || CurrentTool == BuildToolMode.Move)
-            {
-                buildCatalog.SelectPrevious();
-                return;
-            }
-
-            if (CurrentTool == BuildToolMode.Path && pathCatalog != null)
-            {
-                pathCatalog.SelectPrevious();
-                return;
-            }
-
-            if (CurrentTool == BuildToolMode.DetailPaint && detailPaintBrushCatalog != null)
-            {
-                detailPaintBrushCatalog.SelectPrevious();
-                return;
-            }
-
-            if (wallCatalog == null)
-            {
-                return;
-            }
-
-            switch (CurrentTool)
-            {
-                case BuildToolMode.Wall:
-                    wallCatalog.SelectPreviousWall();
-                    break;
-                case BuildToolMode.Door:
-                    wallCatalog.SelectPreviousDoor();
-                    break;
-                case BuildToolMode.Window:
-                    wallCatalog.SelectPreviousWindow();
-                    break;
-            }
-        }
-
-        private void SelectObject(PlacedObject placedObject)
-        {
-            if (selectedObject == placedObject)
-            {
-                return;
-            }
-
-            DeselectCurrentObject();
-            selectedObject = placedObject;
-
-            if (selectedObject != null)
-            {
-                selectedObject.SetSelected(true);
-                buildCatalog.Select(selectedObject.Definition);
-                rotationSteps = selectedObject.RotationSteps;
-            }
-
-            NotifyStateChanged();
-        }
-
-        private void DeselectCurrentObject()
-        {
-            bool hadSelection = !ReferenceEquals(selectedObject, null);
-            if (selectedObject != null)
-            {
-                selectedObject.SetSelected(false);
-            }
-
-            selectedObject = null;
-
-            if (hadSelection)
-            {
-                NotifyStateChanged();
-            }
-        }
-
-        private void RefreshPreviewDefinition()
-        {
-            if (buildPreview == null)
-            {
-                return;
-            }
-
-            switch (CurrentTool)
-            {
-                case BuildToolMode.Wall:
-                    buildPreview.SetPrefab(wallCatalog != null && wallCatalog.CurrentWall != null ? wallCatalog.CurrentWall.prefab : null);
-                    break;
-                case BuildToolMode.Door:
-                    buildPreview.SetPrefab(wallCatalog != null && wallCatalog.CurrentDoor != null ? wallCatalog.CurrentDoor.prefab : null);
-                    break;
-                case BuildToolMode.Window:
-                    buildPreview.SetPrefab(wallCatalog != null && wallCatalog.CurrentWindow != null ? wallCatalog.CurrentWindow.prefab : null);
-                    break;
-                case BuildToolMode.Path:
-                case BuildToolMode.DetailPaint:
-                    buildPreview.SetPrefab(null);
-                    break;
-                default:
-                    buildPreview.SetDefinition(GetCurrentObjectDefinition());
-                    break;
-            }
-        }
-
-        private bool IsPointerOverUi()
-        {
-            return EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
-        }
-
-        private void ResetInteractionStates()
-        {
-            ResetDragStates();
-            ResetFreeRotationTracking();
-            ResetPathDrawing();
-            pathEditingHandlesRenderer?.Hide();
-            isDraggingPathPoint = false;
-            isDraggingPathWidthHandle = false;
-            pathDragDirty = false;
-            detailPaintStrokeRecordedUndo = false;
-        }
-
-        private void ResetDragStates()
-        {
-            isObjectBrushPainting = false;
-            isObjectRectanglePainting = false;
-            isWallBrushPainting = false;
-            isWallRectanglePainting = false;
-            dragSessionRecordedChange = false;
-        }
-
-        private void ResetObjectPaintIfMouseReleased()
-        {
-            if (InputHelper.GetMouseButtonUp(0) || !InputHelper.GetMouseButton(0))
-            {
-                isObjectBrushPainting = false;
-                isObjectRectanglePainting = false;
-                dragSessionRecordedChange = false;
-            }
-        }
-
-        private void ResetWallPaintIfMouseReleased()
-        {
-            if (InputHelper.GetMouseButtonUp(0) || !InputHelper.GetMouseButton(0))
-            {
-                isWallBrushPainting = false;
-                isWallRectanglePainting = false;
-                dragSessionRecordedChange = false;
-            }
-        }
-
-        private void ResetDragStatesIfMouseReleased()
-        {
-            if (!InputHelper.GetMouseButton(0))
-            {
-                ResetDragStates();
-            }
-        }
-
-        private void ResetFreeRotationTracking()
-        {
-            hasFreeRotationReference = false;
-        }
-
-        private List<Vector2Int> GetGridLine(Vector2Int from, Vector2Int to)
-        {
-            List<Vector2Int> result = new List<Vector2Int>();
-            int x0 = from.x;
-            int y0 = from.y;
-            int x1 = to.x;
-            int y1 = to.y;
-            int dx = Mathf.Abs(x1 - x0);
-            int dy = Mathf.Abs(y1 - y0);
-            int sx = x0 < x1 ? 1 : -1;
-            int sy = y0 < y1 ? 1 : -1;
-            int err = dx - dy;
-
-            while (true)
-            {
-                result.Add(new Vector2Int(x0, y0));
-                if (x0 == x1 && y0 == y1)
-                {
-                    break;
-                }
-
-                int e2 = err * 2;
-                if (e2 > -dy)
-                {
-                    err -= dy;
-                    x0 += sx;
-                }
-                if (e2 < dx)
-                {
-                    err += dx;
-                    y0 += sy;
-                }
-            }
-
-            return result;
-        }
-
-        private void NotifyStateChanged()
-        {
-            StateChanged?.Invoke();
-        }
+        private void PaintObjectLine(BuildingDefinition def, Vector2Int from, Vector2Int to, float baseY) { if (buildCommandService == null) return; var cells = GetGridLine(from, to); if (buildCommandService.TryPaintObjectBatch(def, cells, rotationSteps, baseY, rotationSteps * 90f)) foreach(var c in cells) RegisterForSync(gridBuildingSystem.GetPlacedObjectAtCell(c, def.layer)); }
+        private void PaintObjectRectangle(BuildingDefinition def, Vector2Int from, Vector2Int to, float baseY) { if (buildCommandService == null) return; var cells = GetGridRectangle(from, to); if (buildCommandService.TryPaintObjectBatch(def, cells, rotationSteps, baseY, rotationSteps * 90f)) foreach(var c in cells) RegisterForSync(gridBuildingSystem.GetPlacedObjectAtCell(c, def.layer)); }
+        private void PaintWallLine(WallEdge from, WallEdge to) { if (buildCommandService == null) return; var line = GetWallEdgeLine(from, to); if (buildCommandService.TryPaintWallBatch(wallCatalog.CurrentWall, line)) RegisterForSync(line); }
+        private void PaintWallRectangle(Vector2Int from, Vector2Int to) { if (buildCommandService == null) return; var edges = GetWallRectangleEdges(from, to); var cells = GetGridRectangle(from, to); var fDef = GetFloorDefinition(); if (buildCommandService.TryPaintRoomBatch(wallCatalog.CurrentWall, fDef, edges, cells)) { RegisterForSync(edges); if (fDef != null) foreach(var c in cells) RegisterForSync(gridBuildingSystem.GetPlacedObjectAtCell(c, fDef.layer)); } }
+        private BuildingDefinition GetFloorDefinition() { foreach (var item in buildCatalog.AllItems) if (item?.layer == BuildLayer.Floor) return item; return null; }
+
+        private void TryPaintGridCell(BuildingDefinition def, Vector2Int cell, float baseY) { if (buildCommandService == null || !gridBuildingSystem.CanPlace(def, cell, rotationSteps, baseY)) return; if (buildCommandService.TryPaintGridCell(def, cell, rotationSteps, baseY, rotationSteps * 90f)) RegisterForSync(gridBuildingSystem.GetPlacedObjectAtCell(cell, def.layer)); }
+        private void TryPaintWallEdge(WallEdge edge) { if (wallCatalog?.CurrentWall == null || buildCommandService == null || !wallSystem.CanPlaceWall(wallCatalog.CurrentWall, edge)) return; if (buildCommandService.TryPaintWallEdge(wallCatalog.CurrentWall, edge)) RegisterForSync(wallSystem.GetSegment(edge)); }
+        private bool HandleObjectPaintInput(BuildingDefinition def, bool hasP, ObjectPlacementPreview p) { if (paintMode == PlacementPaintMode.Single || IsPointerOverUi()) return false; if (InputHelper.GetMouseButtonDown(0)) { isObjectBrushPainting = (paintMode == PlacementPaintMode.Brush); isObjectRectanglePainting = (paintMode == PlacementPaintMode.Rectangle); objectPaintStartCell = p.originCell; objectPaintLastCell = p.originCell; objectPaintBaseY = p.baseY; return true; } if (InputHelper.GetMouseButtonUp(0)) { if (isObjectBrushPainting) PaintObjectLine(def, objectPaintStartCell, p.originCell, p.baseY); else if (isObjectRectanglePainting) PaintObjectRectangle(def, objectPaintStartCell, p.originCell, p.baseY); isObjectBrushPainting = isObjectRectanglePainting = false; FinalizeMassPlacement(); return true; } return isObjectBrushPainting || isObjectRectanglePainting; }
+        private bool HandleWallPaintInput(Vector3 mPos, WallEdge edge, bool canP) { if (paintMode == PlacementPaintMode.Single || IsPointerOverUi()) return false; if (InputHelper.GetMouseButtonDown(0)) { isWallBrushPainting = (paintMode == PlacementPaintMode.Brush); isWallRectanglePainting = (paintMode == PlacementPaintMode.Rectangle); wallPaintLastEdge = edge; wallRectangleStartCell = gridBuildingSystem.WorldToCell(mPos, BuildLayer.Furniture); return true; } if (InputHelper.GetMouseButtonUp(0)) { if (isWallBrushPainting) PaintWallLine(wallPaintLastEdge, edge); else if (isWallRectanglePainting) PaintWallRectangle(wallRectangleStartCell, gridBuildingSystem.WorldToCell(mPos, BuildLayer.Furniture)); isWallBrushPainting = isWallRectanglePainting = false; FinalizeMassPlacement(); return true; } return isWallBrushPainting || isWallRectanglePainting; }
+
+        private List<Vector2Int> GetGridLine(Vector2Int from, Vector2Int to) { List<Vector2Int> res = new List<Vector2Int>(); int x0 = from.x, y0 = from.y, x1 = to.x, y1 = to.y, dx = Mathf.Abs(x1 - x0), dy = Mathf.Abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1, err = dx - dy; while (true) { res.Add(new Vector2Int(x0, y0)); if (x0 == x1 && y0 == y1) break; int e2 = err * 2; if (e2 > -dy) { err -= dy; x0 += sx; } if (e2 < dx) { err += dx; y0 += sy; } } return res; }
+        private List<Vector2Int> GetGridRectangle(Vector2Int from, Vector2Int to) { List<Vector2Int> res = new List<Vector2Int>(); int minX = Mathf.Min(from.x, to.x), maxX = Mathf.Max(from.x, to.x), minY = Mathf.Min(from.y, to.y), maxY = Mathf.Max(from.y, to.y); for (int x = minX; x <= maxX; x++) for (int y = minY; y <= maxY; y++) res.Add(new Vector2Int(x, y)); return res; }
+        private List<WallEdge> GetWallEdgeLine(WallEdge from, WallEdge to) { List<WallEdge> res = new List<WallEdge>(); if (Mathf.Abs(to.x - from.x) >= Mathf.Abs(to.y - from.y)) { int min = Mathf.Min(from.x, to.x), max = Mathf.Max(from.x, to.x); for (int x = min; x <= max; x++) res.Add(new WallEdge(x, from.y, WallOrientation.Horizontal)); } else { int min = Mathf.Min(from.y, to.y), max = Mathf.Max(from.y, to.y); for (int y = min; y <= max; y++) res.Add(new WallEdge(from.x, y, WallOrientation.Vertical)); } return res; }
+        private List<WallEdge> GetWallRectangleEdges(Vector2Int from, Vector2Int to) { List<WallEdge> res = new List<WallEdge>(); int minX = Mathf.Min(from.x, to.x), maxX = Mathf.Max(from.x, to.x), minY = Mathf.Min(from.y, to.y), maxY = Mathf.Max(from.y, to.y); for (int x = minX; x <= maxX; x++) { res.Add(new WallEdge(x, minY, WallOrientation.Horizontal)); res.Add(new WallEdge(x, maxY + 1, WallOrientation.Horizontal)); } for (int y = minY; y <= maxY; y++) { res.Add(new WallEdge(minX, y, WallOrientation.Vertical)); res.Add(new WallEdge(maxX + 1, y, WallOrientation.Vertical)); } return res; }
+
+        private bool ShouldSelectHoveredObject(BuildingDefinition def, PlacedObject h) => h != null && pendingMove == null && CurrentTool == BuildToolMode.Object;
+        private bool ShouldUseSurfacePlacement(BuildingDefinition def, PlacedObject h) => def != null && h != null && def.SupportsSurfacePlacement && h != selectedObject;
+        private float GetSnappedRotationY(int s) => ((s % 4) + 4) % 4 * 90f;
+        private BuildingDefinition GetCurrentObjectDefinition() => buildCatalog?.Current;
+        private void SelectNextForCurrentTool() { if (CurrentTool == BuildToolMode.Object) buildCatalog.SelectNext(); }
+        private void SelectPreviousForCurrentTool() { if (CurrentTool == BuildToolMode.Object) buildCatalog.SelectPrevious(); }
+        private void SelectObject(PlacedObject o) { DeselectCurrentObject(); selectedObject = o; if (o != null) { o.SetSelected(true); buildCatalog.Select(o.Definition); rotationSteps = o.RotationSteps; } NotifyStateChanged(); }
+        private void DeselectCurrentObject() { if (selectedObject != null) selectedObject.SetSelected(false); selectedObject = null; NotifyStateChanged(); }
+        private void RefreshPreviewDefinition() { if (buildPreview == null) return; buildPreview.SetPrefab((CurrentTool == BuildToolMode.Wall) ? wallCatalog?.CurrentWall?.prefab : (CurrentTool == BuildToolMode.Door) ? wallCatalog?.CurrentDoor?.prefab : (CurrentTool == BuildToolMode.Window) ? wallCatalog?.CurrentWindow?.prefab : buildCatalog?.Current?.prefab); }
+        private bool IsPointerOverUi() => EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+        private void ResetInteractionStates() { isObjectBrushPainting = isObjectRectanglePainting = isWallBrushPainting = isWallRectanglePainting = isPathDrawing = false; }
+        private void ResetDragStates() { ResetInteractionStates(); }
+        private void ResetDragStatesIfMouseReleased() { if (!InputHelper.GetMouseButton(0)) ResetDragStates(); }
+        private bool TryGetCursorContext(out CursorContext ctx) { ctx = default; Camera cam = gameModeController.ActiveCamera; if (cam == null) return false; ctx.ray = cam.ScreenPointToRay(InputHelper.MousePosition); Plane pl = new Plane(Vector3.up, new Vector3(0f, gridBuildingSystem.GridOrigin.y, 0f)); if (!pl.Raycast(ctx.ray, out float d)) return false; ctx.planePoint = ctx.ray.GetPoint(d); if (Physics.Raycast(ctx.ray, out RaycastHit h, 1000f, placementRaycastMask)) { ctx.hasPhysicsHit = true; ctx.physicsHit = h; ctx.hoveredPlacedObject = h.collider?.GetComponentInParent<PlacedObject>(); ctx.hoveredPathStroke = h.collider?.GetComponentInParent<PathStroke>(); ctx.hoveredPathHandleMarker = h.collider?.GetComponent<PathHandleMarker>(); } return true; }
+        private bool TryGetMouseWorldPosition(out Vector3 wPos) { if (TryGetCursorContext(out CursorContext ctx)) { wPos = ctx.planePoint; return true; } wPos = default; return false; }
+        private void RegisterForSync(PlacedObject o) { if (o != null) pendingSyncObjects.Add(o); }
+        private void RegisterForSync(WallSegment w) { if (w != null) pendingSyncWalls.Add(w); }
+        private void RegisterForSync(PathStroke s) { if (s != null) pendingSyncPaths.Add(s); }
+        private void RegisterForSync(List<WallEdge> edges) { foreach(var e in edges) { var s = wallSystem.GetSegment(e); if (s != null) pendingSyncWalls.Add(s); } }
+        private void RegisterForSyncDelete(PathStroke p) { if (p != null) pendingDeletePathIds.Add(p.StrokeId); }
+        private void HandleUndoRedoStateChanged() { }
+        private void NotifyStateChanged() => StateChanged?.Invoke();
+        private bool isFinalizing;
+        private List<PlacedObject> pendingSyncObjects = new List<PlacedObject>();
+        private List<WallSegment> pendingSyncWalls = new List<WallSegment>();
+        private List<PathStroke> pendingSyncPaths = new List<PathStroke>();
+        private List<string> pendingDeletePathIds = new List<string>();
+        public async void FinalizeMassPlacement() { if (multiplayerEditApplyService == null || isFinalizing) return; isFinalizing = true; await Task.Delay(50); if (this == null) return; WorldPatch mp = new WorldPatch { WorldId = mapSaveSystem.CurrentWorldId }; foreach(var p in pendingSyncObjects) if (p != null) mp.UpsertPlacedObjects.Add(p.GetState()); foreach(var s in pendingSyncWalls) if (s != null) mp.UpsertWalls.Add(s.GetState()); foreach(var pt in pendingSyncPaths) if (pt != null) mp.UpsertPaths.Add(new PathStrokeState { StrokeId = pt.StrokeId, DefinitionId = pt.Definition.id, Width = pt.Width, ControlPoints = new List<Vector3>(pt.ControlPoints) }); foreach(var id in pendingDeletePathIds) mp.DeletePathIds.Add(id); if (mp.HasAnyChanges) { await multiplayerEditApplyService.SubmitPatchDirectAsync(mp); if (editDraftSessionController != null) await editDraftSessionController.ApplyDraftSessionAsync(); } pendingSyncObjects.Clear(); pendingSyncWalls.Clear(); pendingSyncPaths.Clear(); pendingDeletePathIds.Clear(); isFinalizing = false; }
     }
 }

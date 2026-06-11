@@ -13,10 +13,9 @@ namespace MapEditorPrototype
 
     public class BuildWorldState
     {
-        public readonly List<PlacedObjectState> PlacedObjects = new List<PlacedObjectState>();
-        public readonly List<WallSegmentState> Walls = new List<WallSegmentState>();
-        public readonly List<PathStrokeState> PathStrokes = new List<PathStrokeState>();
-        public readonly List<DetailSurfaceMaskState> DetailSurfaceMasks = new List<DetailSurfaceMaskState>();
+        public List<PlacedObjectState> PlacedObjects = new List<PlacedObjectState>();
+        public List<WallSegmentState> Walls = new List<WallSegmentState>();
+        public List<PathStrokeState> PathStrokes = new List<PathStrokeState>();
     }
 
     public class RuntimeWorldState
@@ -56,12 +55,6 @@ namespace MapEditorPrototype
         public string StrokeId;
         public string DefinitionId;
         public float Width;
-        public readonly List<Vector3> ControlPoints = new List<Vector3>();
-    }
-
-    public class DetailSurfaceMaskState
-    {
-        public string SurfaceId;
-        public string MaskPngBase64;
+        public List<Vector3> ControlPoints = new List<Vector3>();
     }
 }

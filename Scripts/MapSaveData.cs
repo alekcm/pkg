@@ -13,7 +13,6 @@ namespace MapEditorPrototype
         public List<PlacedObjectSaveData> placedObjects = new List<PlacedObjectSaveData>();
         public List<WallSegmentSaveData> walls = new List<WallSegmentSaveData>();
         public List<PathStrokeSaveData> pathStrokes = new List<PathStrokeSaveData>();
-        public List<DetailSurfaceMaskSaveData> detailSurfaceMasks = new List<DetailSurfaceMaskSaveData>();
         public SerializableVector3 explorerPosition;
         public float explorerYaw;
     }
@@ -50,13 +49,6 @@ namespace MapEditorPrototype
         public string definitionId;
         public float width;
         public List<SerializableVector3> controlPoints = new List<SerializableVector3>();
-    }
-
-    [Serializable]
-    public class DetailSurfaceMaskSaveData
-    {
-        public string surfaceId;
-        public string pngBase64;
     }
 
     [Serializable]

@@ -13,6 +13,13 @@ namespace MapEditorPrototype
         [SerializeField] private NetworkSessionManager networkSessionManager;
         [SerializeField] private TMP_Text statusLabel;
 
+        private void Awake()
+        {
+            if (multiplayerBootstrapService == null) multiplayerBootstrapService = FindObjectOfType<MultiplayerBootstrapService>();
+            if (networkSessionManager == null) networkSessionManager = FindObjectOfType<NetworkSessionManager>();
+            if (mapSaveSystem == null) mapSaveSystem = FindObjectOfType<MapSaveSystem>();
+        }
+
         private async void Start()
         {
             await InitializeAsync();
@@ -21,6 +28,8 @@ namespace MapEditorPrototype
         public async Task InitializeAsync()
         {
             GameLaunchConfig config = GameLaunchContext.Current;
+            Debug.Log($"[Startup] Initializing session. Mode: {config?.Mode}, WorldId: {config?.WorldId}");
+
             if (config == null || config.Mode == SessionLaunchMode.None)
             {
                 SetStatus("No launch config. Returning to main menu.");
@@ -41,8 +50,20 @@ namespace MapEditorPrototype
                     SetStatus("Starting relay host...");
                     if (multiplayerBootstrapService != null)
                     {
+                        Debug.Log("[Startup] Calling HostRelaySessionAsync...");
                         bool hostStarted = await multiplayerBootstrapService.HostRelaySessionAsync();
-                        SetStatus(hostStarted ? "Relay host started." : "Failed to start relay host.");
+                        if (hostStarted && networkSessionManager != null)
+                        {
+                            SetStatus($"Relay host started. Code: {networkSessionManager.CurrentSession.JoinCode}");
+                        }
+                        else
+                        {
+                            SetStatus(hostStarted ? "Relay host started." : "Failed to start relay host.");
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogError("[Startup] multiplayerBootstrapService is NULL!");
                     }
                     break;
                 case SessionLaunchMode.JoinRelay:
@@ -82,8 +103,10 @@ namespace MapEditorPrototype
 
         private void LoadWorldFromConfig(GameLaunchConfig config)
         {
+            Debug.Log("[Startup] Loading world from config...");
             if (mapSaveSystem == null)
             {
+                Debug.LogError("[Startup] mapSaveSystem is NULL!");
                 return;
             }
 
@@ -98,12 +121,14 @@ namespace MapEditorPrototype
             }
             else
             {
+                Debug.Log("[Startup] Creating new world state (no file found or provided).");
                 mapSaveSystem.ApplyWorldState(new WorldState { WorldId = string.IsNullOrWhiteSpace(config.WorldId) ? System.Guid.NewGuid().ToString("N") : config.WorldId });
             }
         }
 
         private void SetStatus(string message)
         {
+            Debug.Log($"[Status] {message}");
             if (statusLabel != null)
             {
                 statusLabel.text = message;

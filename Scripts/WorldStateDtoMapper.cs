@@ -81,21 +81,6 @@ namespace MapEditorPrototype
 
                     data.pathStrokes.Add(strokeData);
                 }
-
-                for (int i = 0; i < worldState.Build.DetailSurfaceMasks.Count; i++)
-                {
-                    DetailSurfaceMaskState item = worldState.Build.DetailSurfaceMasks[i];
-                    if (item == null)
-                    {
-                        continue;
-                    }
-
-                    data.detailSurfaceMasks.Add(new DetailSurfaceMaskSaveData
-                    {
-                        surfaceId = item.SurfaceId,
-                        pngBase64 = item.MaskPngBase64
-                    });
-                }
             }
 
             if (worldState.Runtime != null)
@@ -190,24 +175,6 @@ namespace MapEditorPrototype
                     }
 
                     worldState.Build.PathStrokes.Add(strokeState);
-                }
-            }
-
-            if (data.detailSurfaceMasks != null)
-            {
-                for (int i = 0; i < data.detailSurfaceMasks.Count; i++)
-                {
-                    DetailSurfaceMaskSaveData item = data.detailSurfaceMasks[i];
-                    if (item == null)
-                    {
-                        continue;
-                    }
-
-                    worldState.Build.DetailSurfaceMasks.Add(new DetailSurfaceMaskState
-                    {
-                        SurfaceId = item.surfaceId,
-                        MaskPngBase64 = item.pngBase64
-                    });
                 }
             }
 

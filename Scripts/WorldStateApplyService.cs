@@ -36,165 +36,90 @@ namespace MapEditorPrototype
 
         public void Apply(WorldState worldState)
         {
-            if (worldState == null)
-            {
-                return;
-            }
+            if (worldState == null) return;
+            if (buildSystem != null) buildSystem.ResetTransientEditorState();
+            if (gridBuildingSystem != null) gridBuildingSystem.ClearAll();
+            if (wallSystem != null) wallSystem.ClearAll();
+            if (pathSystem != null) pathSystem.ClearAll();
 
-            if (buildSystem != null)
-            {
-                buildSystem.ResetTransientEditorState();
-            }
-
-            if (gridBuildingSystem != null)
-            {
-                gridBuildingSystem.ClearAll();
-            }
-
-            if (wallSystem != null)
-            {
-                wallSystem.ClearAll();
-            }
-
-            if (pathSystem != null)
-            {
-                pathSystem.ClearAll();
-            }
-
-            ApplyPlacedObjects(worldState);
-            ApplyWalls(worldState);
-            ApplyPaths(worldState);
-            ApplyDetailMasks(worldState);
+            ApplyPlacedObjects(worldState.Build.PlacedObjects);
+            ApplyWalls(worldState.Build.Walls);
+            ApplyPaths(worldState.Build.PathStrokes);
             ApplyRuntime(worldState);
         }
 
-        private void ApplyPlacedObjects(WorldState worldState)
+        public void ApplyIncremental(WorldPatch patch)
         {
-            if (gridBuildingSystem == null || buildCatalog == null || worldState.Build == null)
-            {
-                return;
+            if (patch == null) return;
+            // 1. Delete
+            // (Note: gridBuildingSystem removal by ID is not yet implemented in basic scripts, 
+            // so we'd need to find the object by ID on the scene)
+            foreach (var id in patch.DeletePlacedObjectIds) {
+                foreach(var obj in Object.FindObjectsOfType<PlacedObject>()) {
+                    if (obj.ObjectId == id) { gridBuildingSystem?.Remove(obj); break; }
+                }
+            }
+            foreach (var id in patch.DeleteWallIds) {
+                foreach(var seg in Object.FindObjectsOfType<WallSegment>()) {
+                    if (seg.SegmentId == id) { wallSystem?.RemoveAtEdge(seg.Edge); break; }
+                }
+            }
+            foreach (var id in patch.DeletePathIds) {
+                foreach(var path in Object.FindObjectsOfType<PathStroke>()) {
+                    if (path.StrokeId == id) { pathSystem?.RemoveStroke(path); break; }
+                }
             }
 
-            for (int i = 0; i < worldState.Build.PlacedObjects.Count; i++)
+            // 2. Upsert
+            ApplyPlacedObjects(patch.UpsertPlacedObjects);
+            ApplyWalls(patch.UpsertWalls);
+            ApplyPaths(patch.UpsertPaths);
+        }
+
+        private void ApplyPlacedObjects(List<PlacedObjectState> objects)
+        {
+            if (gridBuildingSystem == null || buildCatalog == null) return;
+            foreach (var item in objects)
             {
-                PlacedObjectState item = worldState.Build.PlacedObjects[i];
-                if (item == null)
-                {
-                    continue;
-                }
-
-                BuildingDefinition definition = buildCatalog.FindById(item.DefinitionId);
-                if (definition == null)
-                {
-                    Debug.LogWarning($"WorldStateApplyService: building definition not found: {item.DefinitionId}");
-                    continue;
-                }
-
-                if (item.UsesGridPlacement)
-                {
-                    gridBuildingSystem.Place(definition, item.OriginCell, item.RotationSteps, item.BaseY, item.RotationY, item.ObjectId);
-                }
-                else
-                {
-                    gridBuildingSystem.PlaceFree(definition, item.WorldPosition, item.RotationSteps, item.RotationY, item.ObjectId);
-                }
+                if (item == null) continue;
+                BuildingDefinition def = buildCatalog.FindById(item.DefinitionId);
+                if (def == null) continue;
+                if (item.UsesGridPlacement) gridBuildingSystem.Place(def, item.OriginCell, item.RotationSteps, item.BaseY, item.RotationY, item.ObjectId);
+                else gridBuildingSystem.PlaceFree(def, item.WorldPosition, item.RotationSteps, item.RotationY, item.ObjectId);
             }
         }
 
-        private void ApplyWalls(WorldState worldState)
+        private void ApplyWalls(List<WallSegmentState> walls)
         {
-            if (wallSystem == null || wallCatalog == null || worldState.Build == null)
+            if (wallSystem == null || wallCatalog == null) return;
+            foreach (var item in walls)
             {
-                return;
-            }
-
-            for (int i = 0; i < worldState.Build.Walls.Count; i++)
-            {
-                WallSegmentState item = worldState.Build.Walls[i];
-                if (item == null)
-                {
-                    continue;
-                }
-
-                WallDefinition wallDefinition = wallCatalog.FindWallById(item.WallDefinitionId);
-                if (wallDefinition != null)
-                {
-                    wallSystem.PlaceWall(wallDefinition, item.Edge, item.SegmentId);
-                }
-
+                if (item == null) continue;
+                WallDefinition wallDef = wallCatalog.FindWallById(item.WallDefinitionId);
+                if (wallDef != null) wallSystem.PlaceWall(wallDef, item.Edge, item.SegmentId);
                 if (!string.IsNullOrWhiteSpace(item.OpeningDefinitionId))
                 {
-                    WallOpeningDefinition openingDefinition = wallCatalog.FindOpeningById(item.OpeningDefinitionId);
-                    if (openingDefinition != null)
-                    {
-                        wallSystem.PlaceOpening(openingDefinition, item.Edge);
-                    }
+                    WallOpeningDefinition openDef = wallCatalog.FindOpeningById(item.OpeningDefinitionId);
+                    if (openDef != null) wallSystem.PlaceOpening(openDef, item.Edge);
                 }
             }
         }
 
-        private void ApplyPaths(WorldState worldState)
+        private void ApplyPaths(List<PathStrokeState> strokes)
         {
-            if (pathSystem == null || pathCatalog == null || worldState.Build == null)
+            if (pathSystem == null || pathCatalog == null) return;
+            foreach (var item in strokes)
             {
-                return;
-            }
-
-            for (int i = 0; i < worldState.Build.PathStrokes.Count; i++)
-            {
-                PathStrokeState item = worldState.Build.PathStrokes[i];
-                if (item == null)
-                {
-                    continue;
-                }
-
-                PathDefinition definition = pathCatalog.FindById(item.DefinitionId);
-                if (definition == null)
-                {
-                    Debug.LogWarning($"WorldStateApplyService: path definition not found: {item.DefinitionId}");
-                    continue;
-                }
-
-                pathSystem.CreateStroke(definition, item.ControlPoints, item.Width, item.StrokeId);
-            }
-        }
-
-        private void ApplyDetailMasks(WorldState worldState)
-        {
-            if (worldState.Build == null || worldState.Build.DetailSurfaceMasks.Count == 0)
-            {
-                return;
-            }
-
-            Dictionary<string, string> masksBySurfaceId = new Dictionary<string, string>();
-            for (int i = 0; i < worldState.Build.DetailSurfaceMasks.Count; i++)
-            {
-                DetailSurfaceMaskState item = worldState.Build.DetailSurfaceMasks[i];
-                if (item == null || string.IsNullOrWhiteSpace(item.SurfaceId))
-                {
-                    continue;
-                }
-
-                masksBySurfaceId[item.SurfaceId] = item.MaskPngBase64;
-            }
-
-            DetailPaintableSurface[] surfaces = UnityEngine.Object.FindObjectsOfType<DetailPaintableSurface>(true);
-            for (int i = 0; i < surfaces.Length; i++)
-            {
-                DetailPaintableSurface surface = surfaces[i];
-                if (surface != null && masksBySurfaceId.TryGetValue(surface.SurfaceId, out string base64))
-                {
-                    surface.ImportMaskFromBase64(base64);
-                }
+                if (item == null) continue;
+                PathDefinition def = pathCatalog.FindById(item.DefinitionId);
+                if (def != null) pathSystem.CreateStroke(def, item.ControlPoints, item.Width, item.StrokeId);
             }
         }
 
         private void ApplyRuntime(WorldState worldState)
         {
             if (explorerController != null && worldState.Runtime != null)
-            {
                 explorerController.TeleportTo(worldState.Runtime.ExplorerPosition, Quaternion.Euler(0f, worldState.Runtime.ExplorerYaw, 0f));
-            }
         }
     }
 }

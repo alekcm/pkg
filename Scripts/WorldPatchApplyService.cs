@@ -19,7 +19,6 @@ namespace MapEditorPrototype
             ApplyPlacedObjectChanges(target.Build.PlacedObjects, patch);
             ApplyWallChanges(target.Build.Walls, patch);
             ApplyPathChanges(target.Build.PathStrokes, patch);
-            ApplyMaskChanges(target.Build.DetailSurfaceMasks, patch);
 
             if (target.Versions != null)
             {
@@ -135,42 +134,6 @@ namespace MapEditorPrototype
             }
         }
 
-        private void ApplyMaskChanges(List<DetailSurfaceMaskState> targetList, WorldPatch patch)
-        {
-            if (targetList == null)
-            {
-                return;
-            }
-
-            for (int i = targetList.Count - 1; i >= 0; i--)
-            {
-                DetailSurfaceMaskState item = targetList[i];
-                if (item != null && patch.DeleteDetailMaskSurfaceIds.Contains(item.SurfaceId))
-                {
-                    targetList.RemoveAt(i);
-                }
-            }
-
-            for (int i = 0; i < patch.UpsertDetailMasks.Count; i++)
-            {
-                DetailSurfaceMaskState incoming = patch.UpsertDetailMasks[i];
-                if (incoming == null)
-                {
-                    continue;
-                }
-
-                int existingIndex = FindMaskIndex(targetList, incoming.SurfaceId);
-                if (existingIndex >= 0)
-                {
-                    targetList[existingIndex] = CloneMaskState(incoming);
-                }
-                else
-                {
-                    targetList.Add(CloneMaskState(incoming));
-                }
-            }
-        }
-
         private int FindPlacedObjectIndex(List<PlacedObjectState> targetList, string id)
         {
             for (int i = 0; i < targetList.Count; i++)
@@ -202,19 +165,6 @@ namespace MapEditorPrototype
             for (int i = 0; i < targetList.Count; i++)
             {
                 if (targetList[i] != null && targetList[i].StrokeId == id)
-                {
-                    return i;
-                }
-            }
-
-            return -1;
-        }
-
-        private int FindMaskIndex(List<DetailSurfaceMaskState> targetList, string id)
-        {
-            for (int i = 0; i < targetList.Count; i++)
-            {
-                if (targetList[i] != null && targetList[i].SurfaceId == id)
                 {
                     return i;
                 }
@@ -257,20 +207,11 @@ namespace MapEditorPrototype
                 DefinitionId = source.DefinitionId,
                 Width = source.Width
             };
-            for (int i = 0; i < source.ControlPoints.Count; i++)
+            if (source.ControlPoints != null)
             {
-                clone.ControlPoints.Add(source.ControlPoints[i]);
+                foreach (var p in source.ControlPoints) clone.ControlPoints.Add(p);
             }
             return clone;
-        }
-
-        private DetailSurfaceMaskState CloneMaskState(DetailSurfaceMaskState source)
-        {
-            return new DetailSurfaceMaskState
-            {
-                SurfaceId = source.SurfaceId,
-                MaskPngBase64 = source.MaskPngBase64
-            };
         }
     }
 }

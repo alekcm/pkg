@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Netcode;
+using System.Threading.Tasks;
 
 namespace MapEditorPrototype
 {
@@ -13,107 +15,66 @@ namespace MapEditorPrototype
 
         public bool SuppressBuildVersionTracking { get; set; }
 
-        public BuildWorldCommandService(
-            GridBuildingSystem gridBuildingSystem,
-            WallSystem wallSystem,
-            PathSystem pathSystem,
-            MapSaveSystem mapSaveSystem,
-            EditorUndoRedoSystem undoRedoSystem)
+        public BuildWorldCommandService(GridBuildingSystem gb, WallSystem ws, PathSystem ps, MapSaveSystem ms, EditorUndoRedoSystem ur)
         {
-            this.gridBuildingSystem = gridBuildingSystem;
-            this.wallSystem = wallSystem;
-            this.pathSystem = pathSystem;
-            this.mapSaveSystem = mapSaveSystem;
-            this.undoRedoSystem = undoRedoSystem;
+            this.gridBuildingSystem = gb;
+            this.wallSystem = ws;
+            this.pathSystem = ps;
+            this.mapSaveSystem = ms;
+            this.undoRedoSystem = ur;
         }
 
-        public void SaveWorld()
-        {
-            mapSaveSystem?.SaveDefault();
-        }
+        public void SaveWorld() { mapSaveSystem?.SaveDefault(); }
+        public void TouchBuildVersion() { if (!SuppressBuildVersionTracking) mapSaveSystem?.IncrementBuildVersion(); }
 
-        public void TouchBuildVersion()
+        public async void LoadWorld()
         {
-            if (!SuppressBuildVersionTracking)
-            {
-                mapSaveSystem?.IncrementBuildVersion();
-            }
-        }
-
-        public void LoadWorld()
-        {
-            undoRedoSystem?.RecordStateBeforeChange();
             mapSaveSystem?.LoadDefault();
-        }
-
-        public void RecordUndoState()
-        {
-            undoRedoSystem?.RecordStateBeforeChange();
-        }
-
-        public void RecordUndoSnapshot(string snapshot)
-        {
-            if (!string.IsNullOrWhiteSpace(snapshot))
+            await Task.Delay(200);
+            if (NetworkManager.Singleton?.IsServer == true)
             {
-                undoRedoSystem?.RecordSpecificSnapshot(snapshot);
+                var router = Object.FindObjectOfType<WorldReplicationMessageRouter>();
+                router?.BroadcastCurrentWorldToAll();
             }
         }
 
-        public bool DeletePlacedObject(PlacedObject placedObject, bool recordUndo = true, bool touchBuildVersion = true)
+        public bool TryPaintRoomBatch(WallDefinition wallDef, BuildingDefinition floorDef, List<WallEdge> wallEdges, List<Vector2Int> floorCells)
         {
-            if (placedObject == null || gridBuildingSystem == null)
-            {
-                return false;
+            if (wallSystem == null || gridBuildingSystem == null) return false;
+
+            WorldPatch fwd = new WorldPatch { WorldId = mapSaveSystem.CurrentWorldId };
+            WorldPatch bwd = new WorldPatch { WorldId = mapSaveSystem.CurrentWorldId };
+
+            // Стены
+            foreach (var edge in wallEdges) {
+                if (!wallSystem.CanPlaceWall(wallDef, edge)) continue;
+                WallSegment s = wallSystem.PlaceWall(wallDef, edge);
+                if (s != null) {
+                    fwd.UpsertWalls.Add(s.GetState());
+                    bwd.DeleteWallIds.Add(s.SegmentId);
+                }
             }
 
-            if (recordUndo)
-            {
-                undoRedoSystem?.RecordStateBeforeChange();
+            // Пол
+            foreach (var cell in floorCells) {
+                if (!gridBuildingSystem.CanPlace(floorDef, cell, 0, gridBuildingSystem.GridOrigin.y)) continue;
+                PlacedObject obj = gridBuildingSystem.Place(floorDef, cell, 0, gridBuildingSystem.GridOrigin.y, 0f);
+                if (obj != null) {
+                    fwd.UpsertPlacedObjects.Add(obj.GetState());
+                    bwd.DeletePlacedObjectIds.Add(obj.ObjectId);
+                }
             }
 
-            gridBuildingSystem.Remove(placedObject);
-            if (touchBuildVersion)
-            {
-                TouchBuildVersion();
-            }
+            if (fwd.HasAnyChanges) undoRedoSystem?.PushAction(fwd, bwd);
+            TouchBuildVersion();
             return true;
         }
 
-        public PlacedObject PlaceGridObject(BuildingDefinition definition, Vector2Int originCell, int rotationSteps, float baseY, float rotationY, bool recordUndo = true)
+        public PlacedObject PlaceGridObject(BuildingDefinition definition, Vector2Int originCell, int rotationSteps, float baseY, float rotationY, bool recordUndo)
         {
-            if (gridBuildingSystem == null)
-            {
-                return null;
-            }
-
-            if (recordUndo)
-            {
-                undoRedoSystem?.RecordStateBeforeChange();
-            }
-
             PlacedObject result = gridBuildingSystem.Place(definition, originCell, rotationSteps, baseY, rotationY);
-            if (result != null)
-            {
-                TouchBuildVersion();
-            }
-            return result;
-        }
-
-        public PlacedObject PlaceFreeObject(BuildingDefinition definition, Vector3 worldPosition, int rotationSteps, float rotationY, bool recordUndo = true)
-        {
-            if (gridBuildingSystem == null)
-            {
-                return null;
-            }
-
-            if (recordUndo)
-            {
-                undoRedoSystem?.RecordStateBeforeChange();
-            }
-
-            PlacedObject result = gridBuildingSystem.PlaceFree(definition, worldPosition, rotationSteps, rotationY);
-            if (result != null)
-            {
+            if (result != null) {
+                if (recordUndo) RecordAddObject(result);
                 TouchBuildVersion();
             }
             return result;
@@ -121,244 +82,170 @@ namespace MapEditorPrototype
 
         public bool TryPaintGridCell(BuildingDefinition definition, Vector2Int cell, int rotationSteps, float baseY, float rotationY)
         {
-            if (gridBuildingSystem == null || !gridBuildingSystem.CanPlace(definition, cell, rotationSteps, baseY))
-            {
-                return false;
-            }
-
+            if (!gridBuildingSystem.CanPlace(definition, cell, rotationSteps, baseY)) return false;
             PlacedObject result = gridBuildingSystem.Place(definition, cell, rotationSteps, baseY, rotationY);
-            if (result != null)
-            {
-                TouchBuildVersion();
-                return true;
-            }
-
+            if (result != null) { RecordAddObject(result); TouchBuildVersion(); return true; }
             return false;
         }
 
-        public bool PlaceWall(WallDefinition definition, WallEdge edge, bool recordUndo = true)
+        public bool TryPaintObjectBatch(BuildingDefinition definition, List<Vector2Int> cells, int rotationSteps, float baseY, float yRotation)
         {
-            if (wallSystem == null || definition == null || !wallSystem.CanPlaceWall(definition, edge))
-            {
-                return false;
+            WorldPatch fwd = new WorldPatch { WorldId = mapSaveSystem.CurrentWorldId };
+            WorldPatch bwd = new WorldPatch { WorldId = mapSaveSystem.CurrentWorldId };
+            foreach (var cell in cells) {
+                if (!gridBuildingSystem.CanPlace(definition, cell, rotationSteps, baseY)) continue;
+                PlacedObject obj = gridBuildingSystem.Place(definition, cell, rotationSteps, baseY, yRotation);
+                if (obj != null) { fwd.UpsertPlacedObjects.Add(obj.GetState()); bwd.DeletePlacedObjectIds.Add(obj.ObjectId); }
             }
+            if (fwd.HasAnyChanges) undoRedoSystem?.PushAction(fwd, bwd);
+            TouchBuildVersion();
+            return true;
+        }
 
-            if (recordUndo)
-            {
-                undoRedoSystem?.RecordStateBeforeChange();
-            }
-
+        public bool PlaceWall(WallDefinition definition, WallEdge edge, bool recordUndo)
+        {
             WallSegment result = wallSystem.PlaceWall(definition, edge);
-            if (result != null)
-            {
-                TouchBuildVersion();
-                return true;
-            }
-
+            if (result != null) { if (recordUndo) RecordAddWall(result); TouchBuildVersion(); return true; }
             return false;
         }
 
-        public bool PlaceOpening(WallOpeningDefinition definition, WallEdge edge, bool recordUndo = true)
+        public bool TryPaintWallEdge(WallDefinition definition, WallEdge edge) { return PlaceWall(definition, edge, true); }
+
+        public bool TryPaintWallBatch(WallDefinition definition, List<WallEdge> edges)
         {
-            if (wallSystem == null || definition == null || !wallSystem.CanPlaceOpening(definition, edge))
-            {
-                return false;
+            WorldPatch fwd = new WorldPatch { WorldId = mapSaveSystem.CurrentWorldId };
+            WorldPatch bwd = new WorldPatch { WorldId = mapSaveSystem.CurrentWorldId };
+            foreach (var edge in edges) {
+                if (!wallSystem.CanPlaceWall(definition, edge)) continue;
+                WallSegment s = wallSystem.PlaceWall(definition, edge);
+                if (s != null) { fwd.UpsertWalls.Add(s.GetState()); bwd.DeleteWallIds.Add(s.SegmentId); }
             }
-
-            if (recordUndo)
-            {
-                undoRedoSystem?.RecordStateBeforeChange();
-            }
-
-            bool result = wallSystem.PlaceOpening(definition, edge);
-            if (result)
-            {
-                TouchBuildVersion();
-            }
-            return result;
+            if (fwd.HasAnyChanges) undoRedoSystem?.PushAction(fwd, bwd);
+            TouchBuildVersion();
+            return true;
         }
 
-        public bool RemoveWallAtEdge(WallEdge edge, bool recordUndo = true)
+        public bool PlaceOpening(WallOpeningDefinition definition, WallEdge edge, bool recordUndo)
         {
-            if (wallSystem == null)
-            {
-                return false;
+            WallSegment sBefore = wallSystem.GetSegment(edge);
+            WorldPatch bwd = new WorldPatch { WorldId = mapSaveSystem.CurrentWorldId };
+            if (sBefore != null) bwd.UpsertWalls.Add(sBefore.GetState());
+            if (wallSystem.PlaceOpening(definition, edge)) {
+                if (recordUndo) { WallSegment sAfter = wallSystem.GetSegment(edge); WorldPatch fwd = new WorldPatch { WorldId = mapSaveSystem.CurrentWorldId }; fwd.UpsertWalls.Add(sAfter.GetState()); undoRedoSystem?.PushAction(fwd, bwd); }
+                TouchBuildVersion(); return true;
             }
-
-            if (recordUndo)
-            {
-                undoRedoSystem?.RecordStateBeforeChange();
-            }
-
-            bool result = wallSystem.RemoveAtEdge(edge);
-            if (result)
-            {
-                TouchBuildVersion();
-            }
-            return result;
-        }
-
-        public bool TryPaintWallEdge(WallDefinition definition, WallEdge edge)
-        {
-            if (wallSystem == null || definition == null || !wallSystem.CanPlaceWall(definition, edge))
-            {
-                return false;
-            }
-
-            WallSegment result = wallSystem.PlaceWall(definition, edge);
-            if (result != null)
-            {
-                TouchBuildVersion();
-                return true;
-            }
-
             return false;
         }
 
-        public PathStroke CreatePath(PathDefinition definition, IReadOnlyList<Vector3> points, float width, bool recordUndo = true)
+        public bool RemoveWallAtEdge(WallEdge edge, bool recordUndo)
         {
-            if (pathSystem == null || definition == null)
-            {
-                return null;
+            WallSegment sBefore = wallSystem.GetSegment(edge);
+            if (sBefore == null) return false;
+            WorldPatch bwd = new WorldPatch { WorldId = mapSaveSystem.CurrentWorldId };
+            bwd.UpsertWalls.Add(sBefore.GetState());
+            if (wallSystem.RemoveAtEdge(edge)) {
+                if (recordUndo) { WorldPatch fwd = new WorldPatch { WorldId = mapSaveSystem.CurrentWorldId }; fwd.DeleteWallIds.Add(sBefore.SegmentId); undoRedoSystem?.PushAction(fwd, bwd); }
+                TouchBuildVersion(); return true;
             }
+            return false;
+        }
 
-            if (recordUndo)
-            {
-                undoRedoSystem?.RecordStateBeforeChange();
-            }
+        public bool DeletePlacedObject(PlacedObject obj, bool recordUndo)
+        {
+            if (obj == null) return false;
+            if (recordUndo) RecordDeleteObject(obj);
+            gridBuildingSystem.Remove(obj);
+            TouchBuildVersion();
+            return true;
+        }
 
-            PathStroke stroke = pathSystem.CreateStroke(definition, points, width);
-            if (stroke != null)
-            {
+        public PathStroke CreatePath(PathDefinition definition, IReadOnlyList<Vector3> points, float width, bool recordUndo)
+        {
+            PathStroke stroke = pathSystem?.CreateStroke(definition, points, width);
+            if (stroke != null) {
+                if (recordUndo) {
+                    WorldPatch fwd = new WorldPatch { WorldId = mapSaveSystem.CurrentWorldId };
+                    fwd.UpsertPaths.Add(new PathStrokeState { StrokeId = stroke.StrokeId, DefinitionId = stroke.Definition.id, Width = stroke.Width, ControlPoints = new List<Vector3>(stroke.ControlPoints) });
+                    WorldPatch bwd = new WorldPatch { WorldId = mapSaveSystem.CurrentWorldId };
+                    bwd.DeletePathIds.Add(stroke.StrokeId);
+                    undoRedoSystem?.PushAction(fwd, bwd);
+                }
                 TouchBuildVersion();
             }
             return stroke;
         }
 
-        public bool DeletePath(PathStroke pathStroke, bool recordUndo = true)
+        public bool DeletePath(PathStroke stroke, bool recordUndo)
         {
-            if (pathSystem == null || pathStroke == null)
-            {
-                return false;
+            if (pathSystem == null || stroke == null) return false;
+            if (recordUndo) {
+                WorldPatch fwd = new WorldPatch { WorldId = mapSaveSystem.CurrentWorldId };
+                fwd.DeletePathIds.Add(stroke.StrokeId);
+                WorldPatch bwd = new WorldPatch { WorldId = mapSaveSystem.CurrentWorldId };
+                bwd.UpsertPaths.Add(new PathStrokeState { StrokeId = stroke.StrokeId, DefinitionId = stroke.Definition.id, Width = stroke.Width, ControlPoints = new List<Vector3>(stroke.ControlPoints) });
+                undoRedoSystem?.PushAction(fwd, bwd);
             }
-
-            if (recordUndo)
-            {
-                undoRedoSystem?.RecordStateBeforeChange();
-            }
-
-            pathSystem.RemoveStroke(pathStroke);
+            pathSystem.RemoveStroke(stroke);
             TouchBuildVersion();
             return true;
         }
 
-        public bool UpdatePathPoint(PathStroke pathStroke, int pointIndex, Vector3 worldPosition, bool recordUndo = true)
+        public bool RemovePathPoint(PathStroke stroke, int index, bool recordUndo)
         {
-            if (pathStroke == null)
-            {
-                return false;
-            }
-
-            if (recordUndo)
-            {
-                undoRedoSystem?.RecordStateBeforeChange();
-            }
-
-            bool result = pathStroke.SetControlPoint(pointIndex, worldPosition);
-            if (result)
-            {
-                pathSystem?.NotifyStrokeChanged();
-                TouchBuildVersion();
-            }
-            return result;
-        }
-
-        public bool InsertPathPoint(PathStroke pathStroke, int segmentIndex, Vector3 worldPosition, out int insertedIndex, bool recordUndo = true)
-        {
-            insertedIndex = -1;
-            if (pathStroke == null)
-            {
-                return false;
-            }
-
-            if (recordUndo)
-            {
-                undoRedoSystem?.RecordStateBeforeChange();
-            }
-
-            bool result = pathStroke.InsertControlPointAfterSegment(segmentIndex, worldPosition, out insertedIndex);
-            if (result)
-            {
-                pathSystem?.NotifyStrokeChanged();
-                TouchBuildVersion();
-            }
-            return result;
-        }
-
-        public bool RemovePathPoint(PathStroke pathStroke, int pointIndex, bool recordUndo = true)
-        {
-            if (pathStroke == null)
-            {
-                return false;
-            }
-
-            if (recordUndo)
-            {
-                undoRedoSystem?.RecordStateBeforeChange();
-            }
-
-            bool result = pathStroke.RemoveControlPointAt(pointIndex);
-            if (result)
-            {
-                pathSystem?.NotifyStrokeChanged();
-                TouchBuildVersion();
-            }
-            else
-            {
-                pathSystem?.RemoveStroke(pathStroke);
-                TouchBuildVersion();
-                return false;
-            }
-
-            return true;
-        }
-
-        public bool UpdatePathWidth(PathStroke pathStroke, float width, bool recordUndo = true)
-        {
-            if (pathStroke == null)
-            {
-                return false;
-            }
-
-            if (recordUndo)
-            {
-                undoRedoSystem?.RecordStateBeforeChange();
-            }
-
-            pathStroke.SetWidth(width);
-            pathSystem?.NotifyStrokeChanged();
+            if (stroke == null) return false;
+            if (recordUndo) {
+                WorldPatch bwd = new WorldPatch { WorldId = mapSaveSystem.CurrentWorldId };
+                bwd.UpsertPaths.Add(new PathStrokeState { StrokeId = stroke.StrokeId, DefinitionId = stroke.Definition.id, Width = stroke.Width, ControlPoints = new List<Vector3>(stroke.ControlPoints) });
+                if (stroke.RemoveControlPointAt(index)) {
+                    WorldPatch fwd = new WorldPatch { WorldId = mapSaveSystem.CurrentWorldId };
+                    fwd.UpsertPaths.Add(new PathStrokeState { StrokeId = stroke.StrokeId, DefinitionId = stroke.Definition.id, Width = stroke.Width, ControlPoints = new List<Vector3>(stroke.ControlPoints) });
+                    undoRedoSystem?.PushAction(fwd, bwd);
+                } else return false;
+            } else if (!stroke.RemoveControlPointAt(index)) return false;
             TouchBuildVersion();
             return true;
         }
 
-        public bool PaintDetail(DetailPaintableSurface surface, RaycastHit hit, DetailPaintBrushDefinition brush, bool erase, bool recordUndo = true)
+        public bool UpdatePathWidth(PathStroke stroke, float width, bool recordUndo)
         {
-            if (surface == null || brush == null)
-            {
-                return false;
-            }
+            if (stroke == null) return false;
+            if (recordUndo) {
+                WorldPatch bwd = new WorldPatch { WorldId = mapSaveSystem.CurrentWorldId };
+                bwd.UpsertPaths.Add(new PathStrokeState { StrokeId = stroke.StrokeId, DefinitionId = stroke.Definition.id, Width = stroke.Width, ControlPoints = new List<Vector3>(stroke.ControlPoints) });
+                stroke.SetWidth(width);
+                WorldPatch fwd = new WorldPatch { WorldId = mapSaveSystem.CurrentWorldId };
+                fwd.UpsertPaths.Add(new PathStrokeState { StrokeId = stroke.StrokeId, DefinitionId = stroke.Definition.id, Width = stroke.Width, ControlPoints = new List<Vector3>(stroke.ControlPoints) });
+                undoRedoSystem?.PushAction(fwd, bwd);
+            } else stroke.SetWidth(width);
+            TouchBuildVersion();
+            return true;
+        }
 
-            if (recordUndo)
-            {
-                undoRedoSystem?.RecordStateBeforeChange();
-            }
+        private void RecordAddObject(PlacedObject obj)
+        {
+            WorldPatch fwd = new WorldPatch { WorldId = mapSaveSystem.CurrentWorldId };
+            fwd.UpsertPlacedObjects.Add(obj.GetState());
+            WorldPatch bwd = new WorldPatch { WorldId = mapSaveSystem.CurrentWorldId };
+            bwd.DeletePlacedObjectIds.Add(obj.ObjectId);
+            undoRedoSystem?.PushAction(fwd, bwd);
+        }
 
-            bool changed = surface.TryPaint(hit, brush, erase);
-            if (changed)
-            {
-                TouchBuildVersion();
-            }
-            return changed;
+        private void RecordDeleteObject(PlacedObject obj)
+        {
+            WorldPatch fwd = new WorldPatch { WorldId = mapSaveSystem.CurrentWorldId };
+            fwd.DeletePlacedObjectIds.Add(obj.ObjectId);
+            WorldPatch bwd = new WorldPatch { WorldId = mapSaveSystem.CurrentWorldId };
+            bwd.UpsertPlacedObjects.Add(obj.GetState());
+            undoRedoSystem?.PushAction(fwd, bwd);
+        }
+
+        private void RecordAddWall(WallSegment s)
+        {
+            WorldPatch fwd = new WorldPatch { WorldId = mapSaveSystem.CurrentWorldId };
+            fwd.UpsertWalls.Add(s.GetState());
+            WorldPatch bwd = new WorldPatch { WorldId = mapSaveSystem.CurrentWorldId };
+            bwd.DeleteWallIds.Add(s.SegmentId);
+            undoRedoSystem?.PushAction(fwd, bwd);
         }
     }
 }

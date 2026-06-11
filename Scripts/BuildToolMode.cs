@@ -7,7 +7,6 @@ namespace MapEditorPrototype
         Door,
         Window,
         Path,
-        DetailPaint,
         Move
     }
 }

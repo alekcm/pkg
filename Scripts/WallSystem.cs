@@ -86,7 +86,8 @@ namespace MapEditorPrototype
 
         public Quaternion GetEdgeRotation(WallEdge edge)
         {
-            return edge.orientation == WallOrientation.Horizontal ? Quaternion.identity : Quaternion.Euler(0f, 90f, 0f);
+            // Меняем местами: теперь Horizontal имеет поворот 90, а Vertical - 0 (или наоборот, подгоняем под твой префаб)
+            return edge.orientation == WallOrientation.Horizontal ? Quaternion.Euler(0f, 90f, 0f) : Quaternion.identity;
         }
 
         public bool CanPlaceWall(WallDefinition definition, WallEdge edge)
@@ -189,6 +190,28 @@ namespace MapEditorPrototype
             Changed?.Invoke();
         }
 
+        public void PlaceWallBatch(WallDefinition definition, List<WallEdge> edges)
+        {
+            if (definition == null || edges == null || edges.Count == 0) return;
+
+            foreach (var edge in edges)
+            {
+                if (!CanPlaceWall(definition, edge)) continue;
+                
+                WallSegment segment = GetOrCreateSegment(edge);
+                segment.SetDefinitions(definition, null);
+                
+                // РЕГИСТРАЦИЯ ДЛЯ СИНХРОНИЗАЦИИ (я добавлю это через BuildSystem ниже)
+            }
+            
+            foreach (var edge in edges)
+            {
+                if (segments.TryGetValue(edge, out WallSegment s)) RebuildVisual(s);
+            }
+            
+            Changed?.Invoke();
+        }
+
         private WallSegment GetOrCreateSegment(WallEdge edge, string segmentId = null)
         {
             if (segments.TryGetValue(edge, out WallSegment segment) && segment != null)
@@ -234,8 +257,6 @@ namespace MapEditorPrototype
             visual.transform.localPosition = worldOffset;
             visual.transform.localRotation = Quaternion.identity;
             visual.name = prefabToUse.name;
-
-            DetailPaintableSurface.EnsureAutoAttached(visual, "Wall");
         }
     }
 }

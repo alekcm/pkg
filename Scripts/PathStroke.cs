@@ -11,7 +11,6 @@ namespace MapEditorPrototype
         [SerializeField] private PathDefinition definition;
         [SerializeField] private float width = 1.5f;
         [SerializeField] private List<Vector3> controlPoints = new List<Vector3>();
-        [SerializeField] private DetailPaintableSurface detailPaintSurface;
         [SerializeField] private bool selected;
 
         private MeshFilter meshFilter;
@@ -24,7 +23,6 @@ namespace MapEditorPrototype
         public PathDefinition Definition => definition;
         public float Width => width;
         public IReadOnlyList<Vector3> ControlPoints => controlPoints;
-        public DetailPaintableSurface DetailPaintSurface => detailPaintSurface;
         public bool IsSelected => selected;
 
         private void Awake()
@@ -59,18 +57,6 @@ namespace MapEditorPrototype
             }
 
             RebuildMesh();
-
-            if (detailPaintSurface == null)
-            {
-                detailPaintSurface = GetComponent<DetailPaintableSurface>();
-            }
-
-            if (detailPaintSurface == null)
-            {
-                detailPaintSurface = gameObject.AddComponent<DetailPaintableSurface>();
-            }
-
-            detailPaintSurface.InitializeSurface();
             SetSelected(false);
         }
 

@@ -34,11 +34,6 @@ namespace MapEditorPrototype
                 {
                     dto.pathStrokes.Add(ToPathDto(worldState.Build.PathStrokes[i]));
                 }
-
-                for (int i = 0; i < worldState.Build.DetailSurfaceMasks.Count; i++)
-                {
-                    dto.detailSurfaceMasks.Add(ToMaskDto(worldState.Build.DetailSurfaceMasks[i]));
-                }
             }
 
             return dto;
@@ -82,14 +77,6 @@ namespace MapEditorPrototype
                 }
             }
 
-            if (dto.detailSurfaceMasks != null)
-            {
-                for (int i = 0; i < dto.detailSurfaceMasks.Count; i++)
-                {
-                    state.Build.DetailSurfaceMasks.Add(ToMaskState(dto.detailSurfaceMasks[i]));
-                }
-            }
-
             return state;
         }
 
@@ -123,11 +110,6 @@ namespace MapEditorPrototype
             }
             dto.deletePathIds.AddRange(patch.DeletePathIds);
 
-            for (int i = 0; i < patch.UpsertDetailMasks.Count; i++)
-            {
-                dto.upsertDetailMasks.Add(ToMaskDto(patch.UpsertDetailMasks[i]));
-            }
-            dto.deleteDetailMaskSurfaceIds.AddRange(patch.DeleteDetailMaskSurfaceIds);
             return dto;
         }
 
@@ -170,14 +152,6 @@ namespace MapEditorPrototype
             }
             patch.DeletePathIds.AddRange(dto.deletePathIds);
 
-            if (dto.upsertDetailMasks != null)
-            {
-                for (int i = 0; i < dto.upsertDetailMasks.Count; i++)
-                {
-                    patch.UpsertDetailMasks.Add(ToMaskState(dto.upsertDetailMasks[i]));
-                }
-            }
-            patch.DeleteDetailMaskSurfaceIds.AddRange(dto.deleteDetailMaskSurfaceIds);
             return patch;
         }
 
@@ -281,24 +255,6 @@ namespace MapEditorPrototype
             }
 
             return state;
-        }
-
-        public static DetailSurfaceMaskDto ToMaskDto(DetailSurfaceMaskState state)
-        {
-            return state == null ? null : new DetailSurfaceMaskDto
-            {
-                surfaceId = state.SurfaceId,
-                pngBase64 = state.MaskPngBase64
-            };
-        }
-
-        public static DetailSurfaceMaskState ToMaskState(DetailSurfaceMaskDto dto)
-        {
-            return dto == null ? null : new DetailSurfaceMaskState
-            {
-                SurfaceId = dto.surfaceId,
-                MaskPngBase64 = dto.pngBase64
-            };
         }
 
         public static Vector3Dto ToVector3Dto(Vector3 value)

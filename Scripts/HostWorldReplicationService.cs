@@ -19,19 +19,17 @@ namespace MapEditorPrototype
 
         public WorldPatchDto CommitPatchAndBuildDto(WorldPatch patch)
         {
-            if (patch == null || !patch.HasAnyChanges)
-            {
-                return null;
-            }
+            if (patch == null || !patch.HasAnyChanges) return null;
 
-            CaptureAuthoritativeStateFromScene();
-            if (AuthoritativeWorldState == null)
-            {
-                return null;
-            }
+            if (AuthoritativeWorldState == null) CaptureAuthoritativeStateFromScene();
+            if (AuthoritativeWorldState == null) return null;
 
+            // 1. Применяем изменения к данным сервера
             patchApplyService.Apply(AuthoritativeWorldState, patch);
-            mapSaveSystem?.ApplyWorldState(WorldStateCloneUtility.Clone(AuthoritativeWorldState));
+            
+            // 2. ВАЖНО: Физически обновляем сцену Хоста, чтобы он увидел новые объекты клиента
+            mapSaveSystem?.ApplyPatch(patch);
+
             if (networkSessionManager != null && AuthoritativeWorldState.Versions != null)
             {
                 networkSessionManager.UpdateVersions(AuthoritativeWorldState.Versions.BuildVersion, AuthoritativeWorldState.Versions.RuntimeVersion);
@@ -42,16 +40,8 @@ namespace MapEditorPrototype
 
         public void CaptureAuthoritativeStateFromScene()
         {
-            if (mapSaveSystem == null)
-            {
-                return;
-            }
-
+            if (mapSaveSystem == null) return;
             AuthoritativeWorldState = mapSaveSystem.CaptureCurrentWorldState();
-            if (networkSessionManager != null && AuthoritativeWorldState != null && AuthoritativeWorldState.Versions != null)
-            {
-                networkSessionManager.UpdateVersions(AuthoritativeWorldState.Versions.BuildVersion, AuthoritativeWorldState.Versions.RuntimeVersion);
-            }
         }
     }
 }

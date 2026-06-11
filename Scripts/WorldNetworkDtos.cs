@@ -12,7 +12,6 @@ namespace MapEditorPrototype
         public List<PlacedObjectDto> placedObjects = new List<PlacedObjectDto>();
         public List<WallSegmentDto> walls = new List<WallSegmentDto>();
         public List<PathStrokeDto> pathStrokes = new List<PathStrokeDto>();
-        public List<DetailSurfaceMaskDto> detailSurfaceMasks = new List<DetailSurfaceMaskDto>();
         public Vector3Dto explorerPosition;
         public float explorerYaw;
     }
@@ -32,9 +31,6 @@ namespace MapEditorPrototype
 
         public List<PathStrokeDto> upsertPaths = new List<PathStrokeDto>();
         public List<string> deletePathIds = new List<string>();
-
-        public List<DetailSurfaceMaskDto> upsertDetailMasks = new List<DetailSurfaceMaskDto>();
-        public List<string> deleteDetailMaskSurfaceIds = new List<string>();
     }
 
     [Serializable]
@@ -85,13 +81,6 @@ namespace MapEditorPrototype
         public string definitionId;
         public float width;
         public List<Vector3Dto> controlPoints = new List<Vector3Dto>();
-    }
-
-    [Serializable]
-    public class DetailSurfaceMaskDto
-    {
-        public string surfaceId;
-        public string pngBase64;
     }
 
     [Serializable]

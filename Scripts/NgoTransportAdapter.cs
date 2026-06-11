@@ -13,22 +13,30 @@ namespace MapEditorPrototype
 
         public bool StartHostWithRelay(RelayAllocationData relayData)
         {
+            Debug.Log("[NgoAdapter] StartHostWithRelay called.");
             if (relayData == null || !ConfigureRelayAsHost(relayData))
             {
+                Debug.LogError("[NgoAdapter] Relay configuration failed.");
                 return false;
             }
 
-            return InvokeNetworkManagerBoolMethod("StartHost");
+            bool result = InvokeNetworkManagerBoolMethod("StartHost");
+            Debug.Log($"[NgoAdapter] StartHost result: {result}");
+            return result;
         }
 
         public bool StartClientWithRelay(RelayAllocationData relayData)
         {
+            Debug.Log("[NgoAdapter] StartClientWithRelay called.");
             if (relayData == null || !ConfigureRelayAsClient(relayData))
             {
+                Debug.LogError("[NgoAdapter] Relay configuration failed.");
                 return false;
             }
 
-            return InvokeNetworkManagerBoolMethod("StartClient");
+            bool result = InvokeNetworkManagerBoolMethod("StartClient");
+            Debug.Log($"[NgoAdapter] StartClient result: {result}");
+            return result;
         }
 
         public bool StartHostLan(ushort port, string listenAddress = "0.0.0.0")
@@ -94,87 +102,74 @@ namespace MapEditorPrototype
             object transport = ResolveTransport();
             if (transport == null)
             {
+                Debug.LogError("[NgoAdapter] Transport is NULL.");
                 return false;
             }
 
-            MethodInfo method = transport.GetType().GetMethod("SetHostRelayData", BindingFlags.Public | BindingFlags.Instance);
-            if (method != null)
+            Debug.Log($"[NgoAdapter] Configuring host relay on transport: {transport.GetType().FullName}");
+
+            // Ищем все методы с именем SetRelayServerData или SetHostRelayData
+            MethodInfo[] methods = transport.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance);
+            foreach (var m in methods)
             {
-                method.Invoke(transport, new object[]
+                if (m.Name == "SetRelayServerData" || m.Name == "SetHostRelayData")
                 {
-                    data.Host,
-                    data.Port,
-                    data.AllocationIdBytes,
-                    data.KeyBytes,
-                    data.ConnectionData,
-                    data.IsSecure
-                });
-                return true;
+                    var ps = m.GetParameters();
+                    Debug.Log($"[NgoAdapter] Found method {m.Name} with {ps.Length} parameters.");
+                    
+                    try {
+                        if (ps.Length == 6) {
+                            m.Invoke(transport, new object[] { data.Host, data.Port, data.AllocationIdBytes, data.KeyBytes, data.ConnectionData, data.IsSecure });
+                            return true;
+                        }
+                        if (ps.Length == 7) {
+                            m.Invoke(transport, new object[] { data.Host, data.Port, data.AllocationIdBytes, data.KeyBytes, data.ConnectionData, data.HostConnectionData, data.IsSecure });
+                            return true;
+                        }
+                    } catch (Exception e) {
+                        Debug.LogError($"[NgoAdapter] Invoke error: {e.Message}");
+                    }
+                }
             }
 
-            MethodInfo fallback = transport.GetType().GetMethod("SetRelayServerData", BindingFlags.Public | BindingFlags.Instance, null,
-                new[] { typeof(string), typeof(ushort), typeof(byte[]), typeof(byte[]), typeof(byte[]), typeof(byte[]), typeof(bool) }, null);
-            if (fallback != null)
-            {
-                fallback.Invoke(transport, new object[]
-                {
-                    data.Host,
-                    data.Port,
-                    data.AllocationIdBytes,
-                    data.KeyBytes,
-                    data.ConnectionData,
-                    data.HostConnectionData,
-                    data.IsSecure
-                });
-                return true;
-            }
-
-            Debug.LogWarning("NgoTransportAdapter: no relay host transport configuration method was found.");
+            Debug.LogError("[NgoAdapter] No suitable relay configuration method found on transport.");
             return false;
         }
 
         private bool ConfigureRelayAsClient(RelayAllocationData data)
         {
             object transport = ResolveTransport();
-            if (transport == null)
-            {
-                return false;
-            }
+            if (transport == null) return false;
 
-            MethodInfo method = transport.GetType().GetMethod("SetClientRelayData", BindingFlags.Public | BindingFlags.Instance);
-            if (method != null)
+            Debug.Log($"[NgoAdapter] Configuring client relay on: {transport.GetType().Name}");
+
+            // Пытаемся найти метод SetRelayServerData или SetClientRelayData
+            MethodInfo[] methods = transport.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance);
+            foreach (var m in methods)
             {
-                method.Invoke(transport, new object[]
+                if (m.Name == "SetRelayServerData" || m.Name == "SetClientRelayData")
                 {
-                    data.Host,
-                    data.Port,
-                    data.AllocationIdBytes,
-                    data.KeyBytes,
-                    data.ConnectionData,
-                    data.HostConnectionData,
-                    data.IsSecure
-                });
-                return true;
+                    var ps = m.GetParameters();
+                    Debug.Log($"[NgoAdapter] Found method {m.Name} with {ps.Length} parameters.");
+                    
+                    try {
+                        // Формат с 7 параметрами (стандарт для современных версий)
+                        if (ps.Length == 7) {
+                            m.Invoke(transport, new object[] { data.Host, data.Port, data.AllocationIdBytes, data.KeyBytes, data.ConnectionData, data.HostConnectionData, data.IsSecure });
+                            return true;
+                        }
+                        // Формат с 6 параметрами
+                        if (ps.Length == 6) {
+                            m.Invoke(transport, new object[] { data.Host, data.Port, data.AllocationIdBytes, data.KeyBytes, data.ConnectionData, data.IsSecure });
+                            return true;
+                        }
+                    } catch (Exception e) {
+                        Debug.LogError($"[NgoAdapter] Client config error: {e.Message}");
+                    }
+                }
             }
 
-            MethodInfo fallback = transport.GetType().GetMethod("SetRelayServerData", BindingFlags.Public | BindingFlags.Instance, null,
-                new[] { typeof(string), typeof(ushort), typeof(byte[]), typeof(byte[]), typeof(byte[]), typeof(byte[]), typeof(bool) }, null);
-            if (fallback != null)
-            {
-                fallback.Invoke(transport, new object[]
-                {
-                    data.Host,
-                    data.Port,
-                    data.AllocationIdBytes,
-                    data.KeyBytes,
-                    data.ConnectionData,
-                    data.HostConnectionData,
-                    data.IsSecure
-                });
-                return true;
-            }
-
-            Debug.LogWarning("NgoTransportAdapter: no relay client transport configuration method was found.");
+            Debug.LogError("[NgoAdapter] No suitable client relay configuration method found!");
             return false;
         }
 
@@ -231,7 +226,7 @@ namespace MapEditorPrototype
         {
             if (networkManagerObject == null)
             {
-                return null;
+                networkManagerObject = this.gameObject; // Попробуем найти на текущем объекте
             }
 
             Component[] components = networkManagerObject.GetComponents<Component>();
@@ -243,19 +238,88 @@ namespace MapEditorPrototype
                 }
             }
 
+            Debug.LogError("[NgoAdapter] Could not find NetworkManager component on " + networkManagerObject.name);
             return null;
         }
 
         private object ResolveTransport()
         {
             object networkManager = ResolveNetworkManager();
-            if (networkManager == null)
+            if (networkManager == null) return null;
+
+            Debug.Log("[NgoAdapter] Searching for NetworkConfig...");
+
+            // 1. Пытаемся найти NetworkConfig (он может быть Полем или Свойством)
+            object networkConfig = null;
+            var configField = networkManager.GetType().GetField("NetworkConfig", BindingFlags.Public | BindingFlags.Instance);
+            if (configField != null)
             {
+                networkConfig = configField.GetValue(networkManager);
+                Debug.Log("[NgoAdapter] Found NetworkConfig as Field.");
+            }
+            else
+            {
+                var configProp = networkManager.GetType().GetProperty("NetworkConfig", BindingFlags.Public | BindingFlags.Instance);
+                if (configProp != null)
+                {
+                    networkConfig = configProp.GetValue(networkManager);
+                    Debug.Log("[NgoAdapter] Found NetworkConfig as Property.");
+                }
+            }
+
+            if (networkConfig == null)
+            {
+                Debug.LogError("[NgoAdapter] Could not find NetworkConfig on NetworkManager via reflection.");
                 return null;
             }
 
-            object networkConfig = networkManager.GetType().GetProperty("NetworkConfig", BindingFlags.Public | BindingFlags.Instance)?.GetValue(networkManager);
-            object networkTransport = networkConfig?.GetType().GetProperty("NetworkTransport", BindingFlags.Public | BindingFlags.Instance)?.GetValue(networkConfig);
+            // 2. Пытаемся найти NetworkTransport внутри NetworkConfig
+            object networkTransport = null;
+            var transportField = networkConfig.GetType().GetField("NetworkTransport", BindingFlags.Public | BindingFlags.Instance);
+            if (transportField != null)
+            {
+                networkTransport = transportField.GetValue(networkConfig);
+                Debug.Log("[NgoAdapter] Found NetworkTransport as Field in NetworkConfig.");
+            }
+            else
+            {
+                var transportProp = networkConfig.GetType().GetProperty("NetworkTransport", BindingFlags.Public | BindingFlags.Instance);
+                if (transportProp != null)
+                {
+                    networkTransport = transportProp.GetValue(networkConfig);
+                    Debug.Log("[NgoAdapter] Found NetworkTransport as Property in NetworkConfig.");
+                }
+            }
+
+            // 3. Крайний случай: ищем компонент транспорта напрямую на объекте
+            if (networkTransport == null)
+            {
+                Debug.LogWarning("[NgoAdapter] Transport not found in Config. Searching for any NetworkTransport component on the object...");
+                Component[] allComponents = (networkManager as Component).GetComponents<Component>();
+                foreach (var c in allComponents)
+                {
+                    if (c == null) continue;
+                    // Проверяем, наследуется ли компонент от NetworkTransport (используем строку, чтобы не зависеть от типов)
+                    Type t = c.GetType();
+                    while (t != null)
+                    {
+                        if (t.FullName == "Unity.Netcode.NetworkTransport")
+                        {
+                            networkTransport = c;
+                            Debug.Log($"[NgoAdapter] Found transport component by type: {c.GetType().Name}");
+                            break;
+                        }
+                        t = t.BaseType;
+                    }
+                    if (networkTransport != null) break;
+                }
+            }
+
+            if (networkTransport == null)
+            {
+                Debug.LogError("[NgoAdapter] Transport is still NULL. Make sure UnityTransport is added and assigned.");
+            }
+
             return networkTransport;
         }
     }

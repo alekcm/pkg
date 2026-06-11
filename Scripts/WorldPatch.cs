@@ -17,13 +17,9 @@ namespace MapEditorPrototype
         public readonly List<PathStrokeState> UpsertPaths = new List<PathStrokeState>();
         public readonly List<string> DeletePathIds = new List<string>();
 
-        public readonly List<DetailSurfaceMaskState> UpsertDetailMasks = new List<DetailSurfaceMaskState>();
-        public readonly List<string> DeleteDetailMaskSurfaceIds = new List<string>();
-
         public bool HasAnyChanges =>
             UpsertPlacedObjects.Count > 0 || DeletePlacedObjectIds.Count > 0 ||
             UpsertWalls.Count > 0 || DeleteWallIds.Count > 0 ||
-            UpsertPaths.Count > 0 || DeletePathIds.Count > 0 ||
-            UpsertDetailMasks.Count > 0 || DeleteDetailMaskSurfaceIds.Count > 0;
+            UpsertPaths.Count > 0 || DeletePathIds.Count > 0;
     }
 }

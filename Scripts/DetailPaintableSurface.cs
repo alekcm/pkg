@@ -103,6 +103,11 @@ namespace MapEditorPrototype
             }
 
             textureResolution = Mathf.Max(64, textureResolution);
+            
+            // Если мы просто инициализируем поверхность, не нужно сразу создавать тяжелые текстуры, 
+            // если только мы не загружаем старую маску.
+            // Но для простоты оставим создание, но УБЕРЕМ RebuildCompositeTexture из инициализации.
+
             runtimeMaskTexture = new Texture2D(textureResolution, textureResolution, TextureFormat.RGBA32, false, false)
             {
                 wrapMode = TextureWrapMode.Clamp,
@@ -118,9 +123,19 @@ namespace MapEditorPrototype
             };
 
             ClearMaskTexture();
-            RebuildCompositeTexture();
+            
+            // Вместо RebuildCompositeTexture мы просто копируем базовую текстуру или устанавливаем её
+            ApplyBaseToComposite();
+            
             cachedSurfaceId = BuildSurfaceId();
             initialized = true;
+        }
+
+        private void ApplyBaseToComposite()
+        {
+            if (runtimeCompositeTexture == null || baseTexture == null) return;
+            Graphics.CopyTexture(baseTexture, runtimeCompositeTexture);
+            ApplyCompositeToMaterial();
         }
 
         public bool TryPaint(RaycastHit hit, DetailPaintBrushDefinition brush, bool erase)
@@ -198,8 +213,12 @@ namespace MapEditorPrototype
 
         public string ExportMaskToBase64()
         {
+            // Если маска пустая (ничего не нарисовано), возвращаем null. 
+            // Это сэкономит мегабайты памяти и секунды времени.
+            if (!hasAnyMaskContent) return null;
+
             InitializeSurface();
-            if (!initialized || runtimeMaskTexture == null || !hasAnyMaskContent)
+            if (!initialized || runtimeMaskTexture == null)
             {
                 return null;
             }
@@ -323,58 +342,58 @@ namespace MapEditorPrototype
 
         private void ClearMaskTexture()
         {
-            Color clear = new Color(0f, 0f, 0f, 0f);
-            Color[] pixels = new Color[textureResolution * textureResolution];
-            for (int i = 0; i < pixels.Length; i++)
-            {
-                pixels[i] = clear;
-            }
-
-            runtimeMaskTexture.SetPixels(pixels);
+            Color32 clear = new Color32(0, 0, 0, 0);
+            Color32[] pixels = new Color32[textureResolution * textureResolution];
+            // В C# массивы Color32 инициализируются нулями по умолчанию, 
+            // так что цикл даже не нужен, если мы хотим clear.
+            runtimeMaskTexture.SetPixels32(pixels);
             runtimeMaskTexture.Apply(false, false);
             hasAnyMaskContent = false;
         }
 
         private void RebuildCompositeTexture()
         {
-            if (runtimeCompositeTexture == null || baseTexture == null)
+            if (runtimeCompositeTexture == null || baseTexture == null || runtimeMaskTexture == null)
             {
                 return;
             }
 
+            // ОПТИМИЗАЦИЯ: используем массивы пикселей вместо GetPixel/SetPixel
+            Color[] maskPixels = runtimeMaskTexture.GetPixels();
+            Color[] compositePixels = new Color[textureResolution * textureResolution];
+            
             for (int y = 0; y < textureResolution; y++)
             {
                 for (int x = 0; x < textureResolution; x++)
                 {
+                    int index = y * textureResolution + x;
                     float u = x / (float)(textureResolution - 1);
                     float v = y / (float)(textureResolution - 1);
+                    
                     Color finalColor = baseTexture.GetPixelBilinear(u, v);
-                    Color mask = runtimeMaskTexture.GetPixel(x, y);
+                    Color mask = maskPixels[index];
 
-                    for (int layerIndex = 0; layerIndex < 4; layerIndex++)
+                    if (mask.r > 0.001f || mask.g > 0.001f || mask.b > 0.001f || mask.a > 0.001f)
                     {
-                        DetailPaintLayerSettings layer = detailLayers != null && layerIndex < detailLayers.Length ? detailLayers[layerIndex] : null;
-                        if (layer == null || layer.texture == null)
+                        for (int layerIndex = 0; layerIndex < 4; layerIndex++)
                         {
-                            continue;
-                        }
+                            DetailPaintLayerSettings layer = detailLayers != null && layerIndex < detailLayers.Length ? detailLayers[layerIndex] : null;
+                            if (layer == null || layer.texture == null) continue;
 
-                        float layerWeight = GetChannelValue(mask, layerIndex);
-                        if (layerWeight <= 0.001f)
-                        {
-                            continue;
-                        }
+                            float layerWeight = GetChannelValue(mask, layerIndex);
+                            if (layerWeight <= 0.001f) continue;
 
-                        Vector2 tiledUv = new Vector2(u * Mathf.Max(0.01f, layer.tiling.x), v * Mathf.Max(0.01f, layer.tiling.y));
-                        Color layerColor = layer.texture.GetPixelBilinear(tiledUv.x - Mathf.Floor(tiledUv.x), tiledUv.y - Mathf.Floor(tiledUv.y));
-                        layerColor *= layer.tint;
-                        finalColor = Color.Lerp(finalColor, layerColor, layerWeight);
+                            Vector2 tiledUv = new Vector2(u * layer.tiling.x, v * layer.tiling.y);
+                            Color layerColor = layer.texture.GetPixelBilinear(tiledUv.x % 1.0f, tiledUv.y % 1.0f);
+                            layerColor *= layer.tint;
+                            finalColor = Color.Lerp(finalColor, layerColor, layerWeight);
+                        }
                     }
-
-                    runtimeCompositeTexture.SetPixel(x, y, finalColor);
+                    compositePixels[index] = finalColor;
                 }
             }
 
+            runtimeCompositeTexture.SetPixels(compositePixels);
             runtimeCompositeTexture.Apply(false, false);
             ApplyCompositeToMaterial();
         }
