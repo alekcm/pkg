@@ -2307,59 +2307,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 532603498}
   m_CullTransparentMesh: 1
---- !u!1 &559081472
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 559081474}
-  - component: {fileID: 559081473}
-  m_Layer: 0
-  m_Name: MapGenerationSmokeTest
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &559081473
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 559081472}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1c24714207e1d224ba0c17db2648ac1f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MapEditorPrototype.MapGenerationSmokeTestController
-  generator: {fileID: 2083587359}
-  mapSaveSystem: {fileID: 1910772709}
-  smokeTestFileName: map_generation_smoke_test.json
-  waitAfterApplySeconds: 0.15
-  waitAfterLoadSeconds: 0.25
-  requirePlacedObjects: 1
-  requireWalls: 1
-  requirePaths: 1
-  compareExactCounts: 1
---- !u!4 &559081474
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 559081472}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -4.75911, y: 34.33577, z: 3.85209}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &560109447
 GameObject:
   m_ObjectHideFlags: 0
@@ -3299,6 +3246,7 @@ MonoBehaviour:
   buildCatalog: {fileID: 1919391448}
   wallCatalog: {fileID: 1919391447}
   pathCatalog: {fileID: 1919391446}
+  detailPaintBrushCatalog: {fileID: 1919391445}
   mapSaveSystem: {fileID: 1910772709}
   undoRedoSystem: {fileID: 1910772708}
   networkSessionManager: {fileID: 1870618271}
@@ -3307,6 +3255,7 @@ MonoBehaviour:
   doorToolButton: {fileID: 2026156908}
   windowToolButton: {fileID: 1783202304}
   pathToolButton: {fileID: 1660996041}
+  detailPaintToolButton: {fileID: 2115979652}
   floorLayerButton: {fileID: 1860014145}
   furnitureLayerButton: {fileID: 1897945590}
   decorLayerButton: {fileID: 337744638}
@@ -4079,53 +4028,6 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
---- !u!1 &1120870369
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1120870371}
-  - component: {fileID: 1120870370}
-  m_Layer: 0
-  m_Name: MapTemplateLibrary
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1120870370
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1120870369}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3f3e570d29590874db5bc1dd61f19246, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MapEditorPrototype.MapGenerationTemplateLibraryService
-  loadOnAwake: 1
-  includeBuiltInMansionTemplate: 1
-  logReloadSummary: 1
---- !u!4 &1120870371
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1120870369}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -4.75911, y: 34.33577, z: 3.85209}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1150748899
 GameObject:
   m_ObjectHideFlags: 0
@@ -4277,7 +4179,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.ProbeVolumePerSceneData
   serializedBakingSet: {fileID: 0}
-  sceneGUID: 33fd5ec393bd833429f092d7206fabc7
+  sceneGUID: e8d4497130d3d00488ea575ae9b79cd0
   obsoleteAsset: {fileID: 0}
   obsoleteCellSharedDataAsset: {fileID: 0}
   obsoleteCellSupportDataAsset: {fileID: 0}
@@ -4743,58 +4645,6 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
---- !u!1 &1347838684
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1347838686}
-  - component: {fileID: 1347838685}
-  m_Layer: 0
-  m_Name: MapTemplateTools
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1347838685
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1347838684}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d7d9c5720248e9f40bcbdd7c71fb4ad1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MapEditorPrototype.MapGenerationTemplateExporter
-  templateLibrary: {fileID: 1120870370}
-  exportMode: 0
-  includeCourtroom: 1
-  includeOutdoorYard: 1
-  prettyPrint: 1
-  cloneAsUserTemplate: 1
-  userTemplateId: user.template.mvp2_mansion_clustered_copy
-  userTemplateName: MVP-2 Mansion User Copy
---- !u!4 &1347838686
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1347838684}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -4.75911, y: 34.33577, z: 3.85209}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1385590750
 GameObject:
   m_ObjectHideFlags: 0
@@ -8421,11 +8271,6 @@ GameObject:
   - component: {fileID: 1910772699}
   - component: {fileID: 1910772698}
   - component: {fileID: 1910772697}
-  - component: {fileID: 1910772712}
-  - component: {fileID: 1910772711}
-  - component: {fileID: 1910772713}
-  - component: {fileID: 1910772715}
-  - component: {fileID: 1910772714}
   m_Layer: 0
   m_Name: CoreSystems
   m_TagString: Untagged
@@ -8502,8 +8347,6 @@ MonoBehaviour:
   clientWorldReplicationService: {fileID: 1910772701}
   multiplayerEditApplyService: {fileID: 1910772700}
   networkSessionManager: {fileID: 1870618271}
-  mapSaveSystem: {fileID: 1910772709}
-  undoRedoSystem: {fileID: 1910772708}
 --- !u!114 &1910772700
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8546,7 +8389,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MapEditorPrototype.HostWorldReplicationService
   mapSaveSystem: {fileID: 1910772709}
-  networkSessionManager: {fileID: 1870618271}
+  networkSessionManager: {fileID: 0}
 --- !u!114 &1910772703
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8599,6 +8442,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MapEditorPrototype.EditDraftSessionController
   mapSaveSystem: {fileID: 1910772709}
+  autoIncrementBuildVersionOnApply: 1
 --- !u!114 &1910772708
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8612,6 +8456,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MapEditorPrototype.EditorUndoRedoSystem
   mapSaveSystem: {fileID: 1910772709}
+  maxStates: 100
+  enableKeyboardShortcuts: 1
 --- !u!114 &1910772709
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8658,107 +8504,6 @@ MonoBehaviour:
   toggleViewKey: 118
   moveExplorerToSpawnWhenEnteringExplore: 0
   keepExplorerActiveInEditMode: 1
---- !u!114 &1910772711
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1910772695}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9eeb026eb53c5134583df7cc797d0ff7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MapEditorPrototype.StampToolController
-  gameModeController: {fileID: 1910772710}
-  gridBuildingSystem: {fileID: 1919391451}
-  wallSystem: {fileID: 1919391450}
-  pathSystem: {fileID: 1919391449}
-  buildCatalog: {fileID: 1919391448}
-  wallCatalog: {fileID: 1919391447}
-  pathCatalog: {fileID: 1919391446}
-  stampLibrary: {fileID: 1910772712}
-  mapSaveSystem: {fileID: 1910772709}
-  undoRedoSystem: {fileID: 1910772708}
-  multiplayerEditApplyService: {fileID: 1910772700}
-  buildSystem: {fileID: 1919391444}
-  selectAreaKey: 98
-  pasteKey: 110
-  rotateKey: 114
-  cancelKey: 27
-  selectionColor: {r: 0.2, g: 0.6, b: 1, a: 0.35}
-  canPlaceColor: {r: 0.2, g: 1, b: 0.3, a: 0.35}
-  cannotPlaceColor: {r: 1, g: 0.25, b: 0.2, a: 0.35}
---- !u!114 &1910772712
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1910772695}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2398602e2c0c7ab4dbfb023d791f72bb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MapEditorPrototype.StampLibraryService
-  buildCatalog: {fileID: 1919391448}
-  wallCatalog: {fileID: 1919391447}
-  pathCatalog: {fileID: 1919391446}
---- !u!114 &1910772713
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1910772695}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4b2007086079cd9408d5fd5e11ed1e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MapEditorPrototype.MapGenerator
-  gameModeController: {fileID: 1910772710}
-  gridBuildingSystem: {fileID: 1919391451}
-  wallSystem: {fileID: 1919391450}
-  pathSystem: {fileID: 1919391449}
-  buildCatalog: {fileID: 1919391448}
-  wallCatalog: {fileID: 1919391447}
-  pathCatalog: {fileID: 1919391446}
-  stampLibrary: {fileID: 1910772712}
-  templateLibrary: {fileID: 0}
-  templateEditor: {fileID: 0}
-  mapSaveSystem: {fileID: 1910772709}
-  undoRedoSystem: {fileID: 1910772708}
-  buildSystem: {fileID: 1919391444}
-  personalRoomCount: 4
-  buildingOrigin: {x: 2, y: 2}
-  clearWorldBeforeGenerate: 1
-  seedOverride: 0
-  stairStampTag: sys:stair_shaft
-  elevatorStampTag: sys:elevator
---- !u!114 &1910772714
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1910772695}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 522f92c7906269640887e73444c870f7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MapEditorPrototype.LoadoutLibraryService
---- !u!114 &1910772715
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1910772695}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bf2063fc757bed04a9fd91170c79b0d3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MapEditorPrototype.LocationLibraryService
 --- !u!1 &1919391442
 GameObject:
   m_ObjectHideFlags: 0
@@ -8817,6 +8562,7 @@ MonoBehaviour:
   buildCatalog: {fileID: 1919391448}
   wallCatalog: {fileID: 1919391447}
   pathCatalog: {fileID: 1919391446}
+  detailPaintBrushCatalog: {fileID: 1919391445}
   buildPreview: {fileID: 840668013}
   wallLinePreviewManager: {fileID: 0}
   gridObjectPreviewManager: {fileID: 0}
@@ -8835,12 +8581,16 @@ MonoBehaviour:
   doorToolKey: 284
   windowToolKey: 285
   pathToolKey: 287
+  detailPaintToolKey: 288
   saveKey: 286
   loadKey: 290
   placementRaycastMask:
     serializedVersion: 2
     m_Bits: 4294967295
   stackedSurfacePadding: 0.01
+  freeRotationSnapAngle: 15
+  freeRotationMinMovement: 0.025
+  pathPointSelectRadius: 0.6
   pathWidthStep: 0.25
   increasePathWidthKey: 93
   decreasePathWidthKey: 91
@@ -8871,8 +8621,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49455280cdd280d458039ad503500daa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MapEditorPrototype.PathCatalog
-  paths:
-  - {fileID: 11400000, guid: 7d72f9e601a4e0042a3b89d8b468dc43, type: 2}
+  paths: []
   startingIndex: 0
 --- !u!114 &1919391447
 MonoBehaviour:
@@ -8913,10 +8662,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b7a0b5a5383a45a44a92df81d8bb047e, type: 2}
   - {fileID: 11400000, guid: b149eca5054b8ca4c9ad9e1c6c401e2c, type: 2}
   - {fileID: 11400000, guid: a3ee3c955ab7d464985bd857fb8c5047, type: 2}
-  - {fileID: 11400000, guid: b56d784a86c34c24f8dd83661c44750e, type: 2}
-  - {fileID: 11400000, guid: feeb6f5e1a961f54d90a279a8d90ca4a, type: 2}
-  - {fileID: 11400000, guid: ee9b42a45d3423143b8e588f3fb623da, type: 2}
-  - {fileID: 11400000, guid: 0a87b63ac005d0a418d3adaf565622ce, type: 2}
   startingLayer: 1
   startingIndex: 0
 --- !u!114 &1919391449
@@ -9337,20 +9082,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1972437475}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 2083587359}
-        m_TargetAssemblyTypeName: MapEditorPrototype.ClusteredMansionMapGenerator,
-          Assembly-CSharp
-        m_MethodName: GenerateAndApply
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &1995668059
 GameObject:
   m_ObjectHideFlags: 0
@@ -9808,87 +9540,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2083587358
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2083587360}
-  - component: {fileID: 2083587359}
-  m_Layer: 0
-  m_Name: MapGenerator
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &2083587359
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2083587358}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2179af043683f840a47da2e94e01b4e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MapEditorPrototype.ClusteredMansionMapGenerator
-  mapSaveSystem: {fileID: 1910772709}
-  templateLibrary: {fileID: 1120870370}
-  stampLibrary: {fileID: 1910772712}
-  locationLibrary: {fileID: 1910772715}
-  loadoutLibrary: {fileID: 1910772714}
-  useStampsWhenAvailable: 1
-  useLocationDefsWhenAvailable: 1
-  decorCellSize: 0.2
-  seed: 12345
-  playerCount: 16
-  includeCourtroom: 1
-  includeOutdoorYard: 1
-  randomizeSeedOnGenerate: 1
-  randomizeGeometryFromSeed: 1
-  maxRandomExtraWidth: 8
-  maxRandomExtraLength: 12
-  maxGenerationAttempts: 5
-  retrySeedStep: 9973
-  logFailedAttempts: 0
-  useTemplateLibraryForValidation: 0
-  templateId: core.template.mvp2_mansion_clustered
-  floorDefinitionId: 2
-  wallDefinitionId: 1
-  doorOpeningDefinitionId: 1
-  windowOpeningDefinitionId: 2
-  bedPlaceholderDefinitionId: 3
-  storagePlaceholderDefinitionId: 5
-  smallPlaceholderDefinitionId: 1
-  decorPlaceholderDefinitionId: 4
-  pathDefinitionId: gravel_path
-  clusterLayoutPreset: 1
-  buildingWidth: 24
-  buildingLength: 34
-  corridorWidth: 2
-  roomDepth: 10
-  roomLength: 6
-  cellSize: 1
---- !u!4 &2083587360
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2083587358}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 30.69859, y: 2.56336, z: 30.32894}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2085429053
 GameObject:
   m_ObjectHideFlags: 0
@@ -10067,7 +9718,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: GenerateAndApply()
+  m_text: Cancel Draft
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -10764,7 +10415,3 @@ SceneRoots:
   - {fileID: 326527039}
   - {fileID: 838758700}
   - {fileID: 1870618268}
-  - {fileID: 2083587360}
-  - {fileID: 559081474}
-  - {fileID: 1347838686}
-  - {fileID: 1120870371}

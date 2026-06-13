@@ -23,6 +23,19 @@ namespace MapEditorPrototype
         [Header("Scene")]
         [SerializeField] private MapSaveSystem mapSaveSystem;
         [SerializeField] private MapGenerationTemplateLibraryService templateLibrary;
+        [SerializeField] private StampLibraryService stampLibrary;
+        [SerializeField] private LocationLibraryService locationLibrary;
+        [SerializeField] private LoadoutLibraryService loadoutLibrary;
+
+        [Header("Stamps (MVP-3)")]
+        [Tooltip("Если включено и в библиотеке есть подходящий штамп по тегам, " +
+                 "комнаты наполняются штампами; иначе — старыми плейсхолдерами.")]
+        [SerializeField] private bool useStampsWhenAvailable = true;
+        [Tooltip("Использовать LocationDef (*.location.json) для слотов комнат, " +
+                 "если локация найдена в библиотеке; иначе — встроенные теги-слоты.")]
+        [SerializeField] private bool useLocationDefsWhenAvailable = true;
+        [Tooltip("Размер клетки слоя Decor (как в GridBuildingSystem.decorCellSize).")]
+        [SerializeField, Min(0.01f)] private float decorCellSize = 0.2f;
 
         [Header("Generation")]
         [SerializeField] private int seed = 12345;
@@ -62,6 +75,13 @@ namespace MapEditorPrototype
         private GeneratedMapLayout lastLayout;
         private MapGenerationValidationResult lastValidation;
         private string lastValidationReport;
+
+        // Наполнитель комнат штампами (создаётся на каждую попытку генерации,
+        // т.к. держит per-attempt rng). null до начала генерации.
+        private RoomFurnisher furnisher;
+
+        // Резолвнутая библиотека локаций для текущей генерации (может быть null).
+        private LocationLibraryService activeLocationLibrary;
 
         public int Seed { get => seed; set => seed = value; }
         public int PlayerCount { get => playerCount; set => playerCount = Mathf.Max(1, value); }
@@ -166,6 +186,11 @@ namespace MapEditorPrototype
                 string worldId = "generated_mansion_" + Mathf.Abs(actualSeed);
                 MapGenerationWorldStateBuilder builder = new MapGenerationWorldStateBuilder(worldId, 1, cellSize, Vector3.zero);
 
+                // MVP-3: наполнитель комнат штампами. Использует ту же rng,
+                // что и вся генерация — значит, при одном seed результат
+                // воспроизводим (требование MVP-2 сохраняется).
+                furnisher = CreateFurnisher(builder, rng);
+
                 layout = new GeneratedMapLayout
                 {
                     TemplateId = "core.template.mvp2_mansion_clustered",
@@ -194,13 +219,71 @@ namespace MapEditorPrototype
                 validation = new MapGenerationValidator().Validate(layout, options);
                 MapGenerationValidationResult gridValidation = new MapGenerationGridConnectivityValidator().Validate(layout);
                 AppendValidation(validation, gridValidation);
+
+                if (furnisher != null)
+                {
+                    Debug.Log($"[Generator] наполнение комнат: {furnisher.FormatStats()}.", this);
+                }
+
                 return builder.State;
             }
             finally
             {
                 buildingWidth = originalBuildingWidth;
                 buildingLength = originalBuildingLength;
+                furnisher = null;
+                activeLocationLibrary = null;
             }
+        }
+
+        /// <summary>
+        /// Собрать RoomFurnisher для текущей попытки генерации.
+        /// Если StampLibraryService не назначен — попытаться найти в сцене;
+        /// если штампов нет/выключено — furnisher просто всегда ставит
+        /// плейсхолдеры (поведение MVP-2).
+        /// </summary>
+        private RoomFurnisher CreateFurnisher(MapGenerationWorldStateBuilder builder, System.Random rng)
+        {
+            StampLibraryService library = stampLibrary;
+            if (useStampsWhenAvailable && library == null)
+            {
+                library = FindObjectOfType<StampLibraryService>();
+                stampLibrary = library;
+            }
+
+            BuildCatalog buildCatalog = FindObjectOfType<BuildCatalog>();
+            WallCatalog wallCatalog = FindObjectOfType<WallCatalog>();
+            PathCatalog pathCatalog = FindObjectOfType<PathCatalog>();
+
+            StampWorldStateEmitter emitter = null;
+            if (useStampsWhenAvailable && library != null && buildCatalog != null)
+            {
+                emitter = new StampWorldStateEmitter(
+                    builder, buildCatalog, wallCatalog, pathCatalog,
+                    cellSize, decorCellSize, Vector3.zero);
+            }
+
+            // Библиотека локаций (data-driven слоты комнат).
+            activeLocationLibrary = locationLibrary;
+            if (useLocationDefsWhenAvailable && activeLocationLibrary == null)
+            {
+                activeLocationLibrary = FindObjectOfType<LocationLibraryService>();
+                locationLibrary = activeLocationLibrary;
+            }
+
+            RoomFurnisher result = new RoomFurnisher(builder, library, emitter, rng, useStampsWhenAvailable);
+
+            // Лодаут владельца комнаты (bed/storage/personal из профиля).
+            if (loadoutLibrary == null)
+            {
+                loadoutLibrary = FindObjectOfType<LoadoutLibraryService>();
+            }
+            if (loadoutLibrary != null)
+            {
+                result.LoadoutResolver = loadoutLibrary.Resolve;
+            }
+
+            return result;
         }
 
         private void ApplySeededGeometryVariation(System.Random rng)
@@ -355,6 +438,12 @@ namespace MapEditorPrototype
                         if (personalIndex < 0) personalIndex = slotIndex;
                         room.OwnerPlayerId = "player_" + (personalIndex + 1);
                         PlaceBedroomPlaceholders(builder, slot.rect, slot.floor, personalIndex);
+                    }
+                    else
+                    {
+                        // Любая другая комната наполняется по своей LocationDef
+                        // (кухня/кладовая/медпункт/…), тем же data-driven путём.
+                        FurnishRoomByLocationId(slot.rect, slot.floor, slot.locationId, room.OwnerPlayerId);
                     }
                 }
 
@@ -562,13 +651,81 @@ namespace MapEditorPrototype
             }
         }
 
+        // Теги слотов личной комнаты. Соответствуют data-format-spec
+        // (loadout:bed / loadout:storage / cat:decor). Когда появится
+        // FurnitureLoadout владельца — пул для bed/storage будет браться
+        // из лодаута; пока это просто фильтр по тегам.
+        private static readonly string[] BedSlotTags = { "loadout:bed" };
+        private static readonly string[] StorageSlotTags = { "loadout:storage" };
+        private static readonly string[] BedroomDecorTags = { "cat:decor" };
+
+        private const string PersonalRoomLocationId = "core.location.personal_room";
+
+        /// <summary>
+        /// Универсальное data-driven наполнение ЛЮБОЙ комнаты по её LocationId:
+        /// ищет LocationDef в библиотеке и отдаёт RoomFurnisher (слоты, anchor,
+        /// лодаут, сокеты, декор). Возвращает число поставленных штампов
+        /// (0 = LocationDef нет / библиотека пуста под её теги → пусть вызывающий
+        /// решает про fallback).
+        /// </summary>
+        private int FurnishRoomByLocationId(RectInt rect, int floor, string locationId, string ownerPlayerId)
+        {
+            if (furnisher == null || !useLocationDefsWhenAvailable || activeLocationLibrary == null
+                || string.IsNullOrWhiteSpace(locationId))
+            {
+                return 0;
+            }
+
+            LocationDefData location = activeLocationLibrary.FindById(locationId);
+            if (location == null)
+            {
+                return 0;
+            }
+
+            Vector2Int doorCell = new Vector2Int(rect.xMin + rect.width / 2, rect.yMin);
+            return furnisher.FurnishRoom(location, rect, doorCell, floor, ownerPlayerId);
+        }
+
         private void PlaceBedroomPlaceholders(MapGenerationWorldStateBuilder builder, RectInt rect, int floor, int index)
         {
-            builder.AddGridObject(bedPlaceholderDefinitionId, new Vector2Int(rect.xMin + 1, rect.yMin + 1), floor, 0, 0f);
-            builder.AddGridObject(storagePlaceholderDefinitionId, new Vector2Int(rect.xMax - 3, rect.yMin + 1), floor, 0, 0f);
+            // 1) Data-driven путь: LocationDef «личная комната» из библиотеки.
+            string owner = "player_" + (index + 1);
+            if (FurnishRoomByLocationId(rect, floor, PersonalRoomLocationId, owner) > 0)
+            {
+                return; // комната наполнена по слотам локации
+            }
+
+            // 2) Fallback: встроенные теги-слоты (шаг 2), затем плейсхолдеры.
+            // Кровать у нижней стены слева, шкаф — справа, опц. декор у верхней.
+            FurnishOrFallback(builder, BedSlotTags, new Vector2Int(rect.xMin + 1, rect.yMin + 1), floor,
+                rotationSteps: 0, fallbackDefinitionId: bedPlaceholderDefinitionId);
+
+            FurnishOrFallback(builder, StorageSlotTags, new Vector2Int(rect.xMax - 3, rect.yMin + 1), floor,
+                rotationSteps: 0, fallbackDefinitionId: storagePlaceholderDefinitionId);
+
             if (index % 3 == 0)
             {
-                builder.AddGridObject(decorPlaceholderDefinitionId, new Vector2Int(rect.xMin + 1, rect.yMax - 2), floor, 0, 0f);
+                FurnishOrFallback(builder, BedroomDecorTags, new Vector2Int(rect.xMin + 1, rect.yMax - 2), floor,
+                    rotationSteps: 0, fallbackDefinitionId: decorPlaceholderDefinitionId);
+            }
+        }
+
+        /// <summary>
+        /// Поставить предмет по тегам через RoomFurnisher; при отсутствии
+        /// furnisher (теоретически) — прямой плейсхолдер. Карта не пустеет.
+        /// </summary>
+        private void FurnishOrFallback(MapGenerationWorldStateBuilder builder, IReadOnlyList<string> tags,
+            Vector2Int cell, int floor, int rotationSteps, string fallbackDefinitionId, float rotationY = 0f)
+        {
+            if (furnisher != null)
+            {
+                furnisher.Place(tags, cell, floor, rotationSteps, fallbackDefinitionId, rotationY);
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(fallbackDefinitionId))
+            {
+                builder.AddGridObject(fallbackDefinitionId, cell, floor, rotationSteps, rotationY);
             }
         }
 
@@ -663,7 +820,9 @@ namespace MapEditorPrototype
             }
 
             Vector2Int center = new Vector2Int(courtRect.xMin + courtRect.width / 2, courtRect.yMin + courtRect.height / 2);
-            builder.AddGridObject(decorPlaceholderDefinitionId, center, courtFloor);
+            // Центр зала суда (трон/подиум): штамп по cat:courtroom, иначе декор.
+            FurnishOrFallback(builder, CourtroomCenterTags, center, courtFloor,
+                rotationSteps: 0, fallbackDefinitionId: decorPlaceholderDefinitionId);
 
             int stands = Mathf.Max(1, playerCount);
             float radius = Mathf.Min(courtRect.width, courtRect.height) * 0.35f;
@@ -672,8 +831,26 @@ namespace MapEditorPrototype
                 float angle = (Mathf.PI * 2f * i) / stands;
                 int x = Mathf.RoundToInt(center.x + Mathf.Cos(angle) * radius);
                 int z = Mathf.RoundToInt(center.y + Mathf.Sin(angle) * radius);
-                builder.AddGridObject(smallPlaceholderDefinitionId, new Vector2Int(x, z), courtFloor, 0, -angle * Mathf.Rad2Deg + 180f);
+                // Кольцо стоек участников: штамп sys:courtroom_stand, иначе плейсхолдер.
+                // Поворот стойки к центру шагами по 90° (грубо, как и раньше — лицом внутрь).
+                int rotSteps = AngleToRotationSteps(angle);
+                FurnishOrFallback(builder, CourtroomStandTags, new Vector2Int(x, z), courtFloor,
+                    rotationSteps: rotSteps, fallbackDefinitionId: smallPlaceholderDefinitionId,
+                    rotationY: -angle * Mathf.Rad2Deg + 180f);
             }
+        }
+
+        private static readonly string[] CourtroomCenterTags = { "cat:courtroom" };
+        private static readonly string[] CourtroomStandTags = { "sys:courtroom_stand" };
+
+        // Грубое сопоставление угла кольца → шаг поворота штампа (0/1/2/3),
+        // чтобы стойка-штамп смотрела примерно к центру. Для плейсхолдера
+        // одновременно передаём точный rotationY (плавный угол).
+        private static int AngleToRotationSteps(float angleRad)
+        {
+            float deg = angleRad * Mathf.Rad2Deg;
+            int step = Mathf.RoundToInt(deg / 90f);
+            return ((step % 4) + 4) % 4;
         }
 
         private static RectInt InsetRect(RectInt rect, int inset)

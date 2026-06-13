@@ -43,21 +43,9 @@ namespace MapEditorPrototype
         /// </summary>
         public static RectInt RotateLocalRect(RectInt rect, int areaW, int areaL, int rotationSteps)
         {
-            int steps = ((rotationSteps % 4) + 4) % 4;
-            int x = rect.xMin, y = rect.yMin, w = rect.width, l = rect.height;
-            int aw = areaW, al = areaL;
-
-            for (int i = 0; i < steps; i++)
-            {
-                int nx = y;
-                int ny = aw - x - w;
-                x = nx; y = ny;
-
-                int t = w; w = l; l = t;
-                t = aw; aw = al; al = t;
-            }
-
-            return new RectInt(x, y, w, l);
+            // Делегируем общей математике, чтобы вставка руками и виртуальная
+            // эмиссия генератора (StampWorldStateEmitter) не разошлись.
+            return StampTransform.RotateLocalRect(rect, areaW, areaL, rotationSteps);
         }
 
         /// <summary>
@@ -194,96 +182,27 @@ namespace MapEditorPrototype
             Vector2Int originCell, int rotationSteps)
         {
             float layerCell = grid.GetCellSize(def.layer);
-            float ratio = grid.CellSize / layerCell; // клеток слоя на одну основную клетку
-            int w = Mathf.RoundToInt(stamp.footprintW * ratio);
-            int l = Mathf.RoundToInt(stamp.footprintL * ratio);
 
-            Vector2Int fp = GridBuildingSystem.RotateFootprint(def.Footprint, o.rotationSteps);
-            Vector2Int local = RotateCellRect(new Vector2Int(o.cellX, o.cellY), fp, w, l, rotationSteps);
-
-            int baseX = Mathf.RoundToInt(originCell.x * ratio);
-            int baseY = Mathf.RoundToInt(originCell.y * ratio);
-            return new Vector2Int(baseX + local.x, baseY + local.y);
+            // Общая математика: повёрнутый footprint + поворот origin-клетки.
+            return StampTransform.TransformObjectCell(
+                o, def.Footprint, stamp.footprintW, stamp.footprintL,
+                originCell, rotationSteps, grid.CellSize, layerCell);
         }
 
         private WallEdge TransformWallEdge(StampData stamp, StampWall w, Vector2Int originCell, int rotationSteps, float baseYOffset = 0f)
         {
             int level = UnityEngine.Mathf.RoundToInt(baseYOffset / UnityEngine.Mathf.Max(0.01f, FloorContext.FloorHeight));
-            int steps = ((rotationSteps % 4) + 4) % 4;
-            int x = w.x, y = w.y;
-            WallOrientation orient = (WallOrientation)w.orientation;
-            int fw = stamp.footprintW, fl = stamp.footprintL;
-
-            for (int i = 0; i < steps; i++)
-            {
-                // Поворот на 90° CCW: (x, y) → (y, fw - x), ориентация меняется.
-                // Для рёбер: вертикальное ребро (x,y) становится горизонтальным (y, fw - x);
-                // горизонтальное (x,y) — вертикальным (y, fw - 1 - x)… выведено через
-                // соответствие ребра паре клеток, см. ниже.
-                if (orient == WallOrientation.Vertical)
-                {
-                    int nx = y;
-                    int ny = fw - x;
-                    x = nx; y = ny;
-                    orient = WallOrientation.Horizontal;
-                }
-                else
-                {
-                    int nx = y;
-                    int ny = fw - 1 - x;
-                    x = nx; y = ny;
-                    orient = WallOrientation.Vertical;
-                }
-                int t = fw; fw = fl; fl = t;
-            }
-
-            return new WallEdge(originCell.x + x, originCell.y + y, orient, level);
-        }
-
-        /// <summary>
-        /// Поворот origin-клетки прямоугольника fp внутри области w×l (в клетках слоя).
-        /// </summary>
-        private static Vector2Int RotateCellRect(Vector2Int cell, Vector2Int fp, int w, int l, int rotationSteps)
-        {
-            int steps = ((rotationSteps % 4) + 4) % 4;
-            int x = cell.x, y = cell.y;
-            int fpx = fp.x, fpy = fp.y;
-
-            for (int i = 0; i < steps; i++)
-            {
-                // CCW 90°: новая origin-клетка прямоугольника.
-                int nx = y;
-                int ny = w - x - fpx;
-                x = nx; y = ny;
-
-                int t = w; w = l; l = t;
-                t = fpx; fpx = fpy; fpy = t;
-            }
-
-            return new Vector2Int(x, y);
+            return StampTransform.TransformWallEdge(w, stamp.footprintW, stamp.footprintL, originCell, rotationSteps, level);
         }
 
         private static Vector3 RotateLocal(Vector3 local, StampData stamp, int rotationSteps, float cellSize)
         {
-            int steps = ((rotationSteps % 4) + 4) % 4;
-            float w = stamp.footprintW * cellSize;
-            float l = stamp.footprintL * cellSize;
-            float x = local.x, z = local.z;
-
-            for (int i = 0; i < steps; i++)
-            {
-                float nx = z;
-                float nz = w - x;
-                x = nx; z = nz;
-                float t = w; w = l; l = t;
-            }
-
-            return new Vector3(x, local.y, z);
+            return StampTransform.RotateLocalPosition(local, stamp.footprintW, stamp.footprintL, rotationSteps, cellSize);
         }
 
         private static float NormalizedYaw(int rotationSteps)
         {
-            return (((rotationSteps % 4) + 4) % 4) * 90f;
+            return StampTransform.NormalizedYaw(rotationSteps);
         }
     }
 }
