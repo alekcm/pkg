@@ -1,3 +1,4 @@
+// ОБНОВЛЕНО для этажей. ЗАМЕНЯЕТ Assets/Scripts/BuildWorldCommandService.cs.
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
@@ -57,8 +58,9 @@ namespace MapEditorPrototype
 
             // Пол
             foreach (var cell in floorCells) {
-                if (!gridBuildingSystem.CanPlace(floorDef, cell, 0, gridBuildingSystem.GridOrigin.y)) continue;
-                PlacedObject obj = gridBuildingSystem.Place(floorDef, cell, 0, gridBuildingSystem.GridOrigin.y, 0f);
+                float floorBaseY = gridBuildingSystem.GridOrigin.y + FloorContext.ActiveFloorY;
+                if (!gridBuildingSystem.CanPlace(floorDef, cell, 0, floorBaseY)) continue;
+                PlacedObject obj = gridBuildingSystem.Place(floorDef, cell, 0, floorBaseY, 0f);
                 if (obj != null) {
                     fwd.UpsertPlacedObjects.Add(obj.GetState());
                     bwd.DeletePlacedObjectIds.Add(obj.ObjectId);

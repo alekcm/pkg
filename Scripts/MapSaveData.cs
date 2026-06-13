@@ -1,3 +1,5 @@
+// ОБНОВЛЕНО для этажей: у стены появилось поле level (старые сейвы = этаж 0).
+// ЗАМЕНЯЕТ Assets/Scripts/MapSaveData.cs.
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -38,6 +40,7 @@ namespace MapEditorPrototype
         public int x;
         public int y;
         public int orientation;
+        public int level; // этаж; в старых сейвах поля нет => 0
         public string wallDefinitionId;
         public string openingDefinitionId;
     }

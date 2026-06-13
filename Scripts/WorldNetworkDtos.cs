@@ -1,3 +1,4 @@
+// ОБНОВЛЕНО для этажей. ЗАМЕНЯЕТ Assets/Scripts/WorldNetworkDtos.cs.
 using System;
 using System.Collections.Generic;
 
@@ -70,6 +71,7 @@ namespace MapEditorPrototype
         public int x;
         public int y;
         public int orientation;
+        public int level;
         public string wallDefinitionId;
         public string openingDefinitionId;
     }

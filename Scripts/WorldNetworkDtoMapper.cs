@@ -1,3 +1,4 @@
+// ОБНОВЛЕНО для этажей. ЗАМЕНЯЕТ Assets/Scripts/WorldNetworkDtoMapper.cs.
 using UnityEngine;
 
 namespace MapEditorPrototype
@@ -194,6 +195,7 @@ namespace MapEditorPrototype
                 x = state.Edge.x,
                 y = state.Edge.y,
                 orientation = (int)state.Edge.orientation,
+                level = state.Edge.level,
                 wallDefinitionId = state.WallDefinitionId,
                 openingDefinitionId = state.OpeningDefinitionId
             };
@@ -204,7 +206,7 @@ namespace MapEditorPrototype
             return dto == null ? null : new WallSegmentState
             {
                 SegmentId = dto.segmentId,
-                Edge = new WallEdge(dto.x, dto.y, (WallOrientation)dto.orientation),
+                Edge = new WallEdge(dto.x, dto.y, (WallOrientation)dto.orientation, dto.level),
                 WallDefinitionId = dto.wallDefinitionId,
                 OpeningDefinitionId = dto.openingDefinitionId
             };

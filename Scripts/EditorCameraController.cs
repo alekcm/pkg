@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace MapEditorPrototype
 {
@@ -74,6 +75,13 @@ namespace MapEditorPrototype
 
         private void HandleZoom()
         {
+            // Колесо занято UI (скролл списка тегов/библиотеки штампов
+            // или canvas-элемент под курсором) — камера не зумит.
+            if (UiInputGuard.IsScrollBlocked || IsPointerOverCanvasUi())
+            {
+                return;
+            }
+
             float scroll = InputHelper.MouseScrollY;
             if (Mathf.Abs(scroll) < 0.01f)
             {
@@ -81,6 +89,11 @@ namespace MapEditorPrototype
             }
 
             transform.position += transform.forward * (scroll * zoomSpeed);
+        }
+
+        private bool IsPointerOverCanvasUi()
+        {
+            return EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
         }
 
         private void ClampHeight()

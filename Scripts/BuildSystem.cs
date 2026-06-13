@@ -1,3 +1,5 @@
+// ОБНОВЛЕНО для этажей: курсор и базовая высота учитывают активный этаж.
+// ЗАМЕНЯЕТ Assets/Scripts/BuildSystem.cs.
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -272,7 +274,7 @@ namespace MapEditorPrototype
         private bool TryBuildObjectPlacement(BuildingDefinition def, CursorContext ctx, out ObjectPlacementPreview p) {
             p = default; if (def == null) return false;
             Vector3 anchor = ctx.hasPhysicsHit ? ctx.physicsHit.point : ctx.planePoint;
-            float baseY = gridBuildingSystem.GridOrigin.y; if (ShouldUseSurfacePlacement(def, ctx.hoveredPlacedObject)) baseY = ctx.hoveredPlacedObject.GetWorldBounds().max.y + stackedSurfacePadding;
+            float baseY = gridBuildingSystem.GridOrigin.y + FloorContext.ActiveFloorY; if (ShouldUseSurfacePlacement(def, ctx.hoveredPlacedObject)) baseY = ctx.hoveredPlacedObject.GetWorldBounds().max.y + stackedSurfacePadding;
             p.useGridPlacement = true; p.baseY = baseY; Vector2Int rotF = GridBuildingSystem.RotateFootprint(def.Footprint, rotationSteps); p.originCell = gridBuildingSystem.WorldToCell(anchor, def.layer); p.worldPosition = gridBuildingSystem.GetPlacementPosition(p.originCell, rotF, def.worldOffset, def.layer, baseY); p.yRotation = rotationSteps * 90f; p.canPlace = gridBuildingSystem.CanPlace(def, p.originCell, rotationSteps, baseY); return true;
         }
 
@@ -305,7 +307,7 @@ namespace MapEditorPrototype
         private void ResetInteractionStates() { isObjectBrushPainting = isObjectRectanglePainting = isWallBrushPainting = isWallRectanglePainting = isPathDrawing = false; }
         private void ResetDragStates() { ResetInteractionStates(); }
         private void ResetDragStatesIfMouseReleased() { if (!InputHelper.GetMouseButton(0)) ResetDragStates(); }
-        private bool TryGetCursorContext(out CursorContext ctx) { ctx = default; Camera cam = gameModeController.ActiveCamera; if (cam == null) return false; ctx.ray = cam.ScreenPointToRay(InputHelper.MousePosition); Plane pl = new Plane(Vector3.up, new Vector3(0f, gridBuildingSystem.GridOrigin.y, 0f)); if (!pl.Raycast(ctx.ray, out float d)) return false; ctx.planePoint = ctx.ray.GetPoint(d); if (Physics.Raycast(ctx.ray, out RaycastHit h, 1000f, placementRaycastMask)) { ctx.hasPhysicsHit = true; ctx.physicsHit = h; ctx.hoveredPlacedObject = h.collider?.GetComponentInParent<PlacedObject>(); ctx.hoveredPathStroke = h.collider?.GetComponentInParent<PathStroke>(); ctx.hoveredPathHandleMarker = h.collider?.GetComponent<PathHandleMarker>(); } return true; }
+        private bool TryGetCursorContext(out CursorContext ctx) { ctx = default; Camera cam = gameModeController.ActiveCamera; if (cam == null) return false; ctx.ray = cam.ScreenPointToRay(InputHelper.MousePosition); Plane pl = new Plane(Vector3.up, new Vector3(0f, gridBuildingSystem.GridOrigin.y + FloorContext.ActiveFloorY, 0f)); if (!pl.Raycast(ctx.ray, out float d)) return false; ctx.planePoint = ctx.ray.GetPoint(d); if (Physics.Raycast(ctx.ray, out RaycastHit h, 1000f, placementRaycastMask)) { ctx.hasPhysicsHit = true; ctx.physicsHit = h; ctx.hoveredPlacedObject = h.collider?.GetComponentInParent<PlacedObject>(); ctx.hoveredPathStroke = h.collider?.GetComponentInParent<PathStroke>(); ctx.hoveredPathHandleMarker = h.collider?.GetComponent<PathHandleMarker>(); } return true; }
         private bool TryGetMouseWorldPosition(out Vector3 wPos) { if (TryGetCursorContext(out CursorContext ctx)) { wPos = ctx.planePoint; return true; } wPos = default; return false; }
         private void RegisterForSync(PlacedObject o) { if (o != null) pendingSyncObjects.Add(o); }
         private void RegisterForSync(WallSegment w) { if (w != null) pendingSyncWalls.Add(w); }

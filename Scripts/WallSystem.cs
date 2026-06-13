@@ -1,3 +1,5 @@
+// ОБНОВЛЕНО для этажей: рёбра несут level, высота сегмента = level * FloorHeight.
+// ЗАМЕНЯЕТ Assets/Scripts/WallSystem.cs.
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -41,24 +43,25 @@ namespace MapEditorPrototype
             float distanceBottom = Mathf.Abs(localY);
             float distanceTop = Mathf.Abs(cellSize - localY);
 
+            int level = FloorContext.ActiveFloor;
             float minDistance = distanceLeft;
-            edge = new WallEdge(cellX, cellY, WallOrientation.Vertical);
+            edge = new WallEdge(cellX, cellY, WallOrientation.Vertical, level);
 
             if (distanceRight < minDistance)
             {
                 minDistance = distanceRight;
-                edge = new WallEdge(cellX + 1, cellY, WallOrientation.Vertical);
+                edge = new WallEdge(cellX + 1, cellY, WallOrientation.Vertical, level);
             }
 
             if (distanceBottom < minDistance)
             {
                 minDistance = distanceBottom;
-                edge = new WallEdge(cellX, cellY, WallOrientation.Horizontal);
+                edge = new WallEdge(cellX, cellY, WallOrientation.Horizontal, level);
             }
 
             if (distanceTop < minDistance)
             {
-                edge = new WallEdge(cellX, cellY + 1, WallOrientation.Horizontal);
+                edge = new WallEdge(cellX, cellY + 1, WallOrientation.Horizontal, level);
             }
 
             edgePosition = GetEdgeWorldPosition(edge);
@@ -76,12 +79,13 @@ namespace MapEditorPrototype
             float cellSize = gridBuildingSystem.CellSize;
             Vector3 origin = gridBuildingSystem.GridOrigin;
 
+            float floorY = wallYOffset + FloorContext.FloorY(edge.level);
             if (edge.orientation == WallOrientation.Horizontal)
             {
-                return origin + new Vector3((edge.x + 0.5f) * cellSize, wallYOffset, edge.y * cellSize);
+                return origin + new Vector3((edge.x + 0.5f) * cellSize, floorY, edge.y * cellSize);
             }
 
-            return origin + new Vector3(edge.x * cellSize, wallYOffset, (edge.y + 0.5f) * cellSize);
+            return origin + new Vector3(edge.x * cellSize, floorY, (edge.y + 0.5f) * cellSize);
         }
 
         public Quaternion GetEdgeRotation(WallEdge edge)
@@ -220,7 +224,7 @@ namespace MapEditorPrototype
             }
 
             Transform parent = wallRoot != null ? wallRoot : transform;
-            GameObject wallAnchor = new GameObject($"Wall_{edge.x}_{edge.y}_{edge.orientation}");
+            GameObject wallAnchor = new GameObject($"Wall_{edge.x}_{edge.y}_{edge.orientation}_f{edge.level}");
             wallAnchor.transform.SetParent(parent, false);
             wallAnchor.transform.SetPositionAndRotation(GetEdgeWorldPosition(edge), GetEdgeRotation(edge));
 

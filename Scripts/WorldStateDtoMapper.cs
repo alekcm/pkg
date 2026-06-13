@@ -1,3 +1,4 @@
+// ОБНОВЛЕНО для этажей. ЗАМЕНЯЕТ Assets/Scripts/WorldStateDtoMapper.cs.
 using UnityEngine;
 
 namespace MapEditorPrototype
@@ -54,6 +55,7 @@ namespace MapEditorPrototype
                         x = item.Edge.x,
                         y = item.Edge.y,
                         orientation = (int)item.Edge.orientation,
+                        level = item.Edge.level,
                         wallDefinitionId = item.WallDefinitionId,
                         openingDefinitionId = item.OpeningDefinitionId
                     });
@@ -142,7 +144,7 @@ namespace MapEditorPrototype
                     worldState.Build.Walls.Add(new WallSegmentState
                     {
                         SegmentId = item.segmentId,
-                        Edge = new WallEdge(item.x, item.y, (WallOrientation)item.orientation),
+                        Edge = new WallEdge(item.x, item.y, (WallOrientation)item.orientation, item.level),
                         WallDefinitionId = item.wallDefinitionId,
                         OpeningDefinitionId = item.openingDefinitionId
                     });

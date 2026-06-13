@@ -3,12 +3,17 @@ using UnityEngine;
 
 namespace MapEditorPrototype
 {
+    /// <summary>
+    /// ОБНОВЛЕНО: хранит level (этаж) ребра.
+    /// ЗАМЕНЯЕТ Assets/Scripts/WallSegment.cs.
+    /// </summary>
     public class WallSegment : MonoBehaviour
     {
         [SerializeField] private string segmentId;
         [SerializeField] private int cellX;
         [SerializeField] private int cellY;
         [SerializeField] private WallOrientation orientation;
+        [SerializeField] private int level;
         [SerializeField] private WallDefinition wallDefinition;
         [SerializeField] private WallOpeningDefinition openingDefinition;
 
@@ -16,7 +21,7 @@ namespace MapEditorPrototype
         private bool isStateDirty = true;
 
         public string SegmentId => segmentId;
-        public WallEdge Edge => new WallEdge(cellX, cellY, orientation);
+        public WallEdge Edge => new WallEdge(cellX, cellY, orientation, level);
         public WallDefinition WallDefinition => wallDefinition;
         public WallOpeningDefinition OpeningDefinition => openingDefinition;
 
@@ -27,7 +32,7 @@ namespace MapEditorPrototype
                 cachedState = new WallSegmentState
                 {
                     SegmentId = segmentId,
-                    Edge = new WallEdge(cellX, cellY, orientation),
+                    Edge = new WallEdge(cellX, cellY, orientation, level),
                     WallDefinitionId = wallDefinition?.id,
                     OpeningDefinitionId = openingDefinition?.id
                 };
@@ -42,6 +47,7 @@ namespace MapEditorPrototype
             cellX = edge.x;
             cellY = edge.y;
             orientation = edge.orientation;
+            level = edge.level;
             isStateDirty = true;
         }
 
