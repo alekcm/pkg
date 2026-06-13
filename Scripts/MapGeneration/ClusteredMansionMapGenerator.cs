@@ -37,6 +37,15 @@ namespace MapEditorPrototype
         [Tooltip("Размер клетки слоя Decor (как в GridBuildingSystem.decorCellSize).")]
         [SerializeField, Min(0.01f)] private float decorCellSize = 0.2f;
 
+        [Header("Terrain / Terraces (MVP-3.5)")]
+        [Tooltip("Включить дискретные террасы внешней территории (двор=0, сад=+1). " +
+                 "Выключено = плоская земля (поведение MVP-2/3).")]
+        [SerializeField] private bool enableTerraces = true;
+        [Tooltip("Высота одного уровня террасы в метрах.")]
+        [SerializeField, Min(0f)] private float terraceLevelHeight = 1.0f;
+        [Tooltip("Тег штампа уличной лестницы между уровнями (на стыке террас).")]
+        [SerializeField] private string outdoorStairTag = "sys:stairs_outdoor";
+
         [Header("Generation")]
         [SerializeField] private int seed = 12345;
         [SerializeField, Min(1)] private int playerCount = 16;
@@ -82,6 +91,9 @@ namespace MapEditorPrototype
 
         // Резолвнутая библиотека локаций для текущей генерации (может быть null).
         private LocationLibraryService activeLocationLibrary;
+
+        // Провайдер высоты земли для текущей генерации (террасы). Никогда null.
+        private IGroundHeightProvider groundProvider = FlatGround.Instance;
 
         public int Seed { get => seed; set => seed = value; }
         public int PlayerCount { get => playerCount; set => playerCount = Mathf.Max(1, value); }
@@ -200,6 +212,11 @@ namespace MapEditorPrototype
                 };
 
                 BuildClusterTree(layout);
+
+                // MVP-3.5: провайдер высоты земли (террасы). Здания держим на
+                // уровне 0, внешние зоны получат свои уровни в BuildOutdoorYard.
+                groundProvider = BuildGroundProvider(layout);
+
                 BuildIndoorFloors(layout, builder, rng);
 
                 if (includeCourtroom)
@@ -233,6 +250,7 @@ namespace MapEditorPrototype
                 buildingLength = originalBuildingLength;
                 furnisher = null;
                 activeLocationLibrary = null;
+                groundProvider = FlatGround.Instance;
             }
         }
 
@@ -337,6 +355,26 @@ namespace MapEditorPrototype
         }
 
         private readonly Dictionary<WallEdge, string> pendingWalls = new Dictionary<WallEdge, string>();
+
+        /// <summary>
+        /// Построить провайдер высоты земли для текущей генерации.
+        /// Террасы выключены → FlatGround (плоскость, поведение MVP-2/3).
+        /// Включены → TerracedGround, в котором зона здания зафиксирована на
+        /// уровне 0 (как в The Sims — под фундаментом ровно). Конкретные
+        /// террасы двора/сада добавляются позже в BuildOutdoorYard.
+        /// </summary>
+        private IGroundHeightProvider BuildGroundProvider(GeneratedMapLayout layout)
+        {
+            if (!enableTerraces)
+            {
+                return FlatGround.Instance;
+            }
+
+            TerracedGround ground = new TerracedGround(terraceLevelHeight, defaultLevel: 0);
+            // Здание держим на уровне 0 (с запасом по периметру).
+            ground.AddBuildingFlatZone(new RectInt(-1, -1, buildingWidth + 2, buildingLength + 2));
+            return ground;
+        }
 
         private void BuildClusterTree(GeneratedMapLayout layout)
         {
@@ -892,6 +930,34 @@ namespace MapEditorPrototype
                 cluster.OutdoorZoneIds.Add(yard.ZoneId);
             }
 
+            // MVP-3.5: приподнятая терраса сада на дальней стороне двора.
+            // Высоту берём только через groundProvider.
+            TerracedGround terraced = groundProvider as TerracedGround;
+            GeneratedOutdoorZonePlan garden = null;
+            if (terraced != null)
+            {
+                // Двор = уровень 0 (terraced.defaultLevel уже 0, явно не нужен).
+                int gardenDepth = Mathf.Max(4, yardBounds.height / 3);
+                RectInt gardenRect = new RectInt(
+                    yardBounds.xMin, yardBounds.yMax - gardenDepth, yardBounds.width, gardenDepth);
+                terraced.AddZone(gardenRect, level: 1, priority: 10);
+
+                garden = new GeneratedOutdoorZonePlan
+                {
+                    ZoneId = "garden_terrace",
+                    LocationId = "core.location.garden",
+                    ClusterId = "outdoor_grounds",
+                    DisplayName = "Садовая терраса",
+                    Bounds = gardenRect,
+                    TerraceLevel = 1,
+                    Required = false
+                };
+                garden.Tags.Add("cat:outdoor");
+                garden.Tags.Add("garden");
+                layout.OutdoorZones.Add(garden);
+                if (cluster != null) cluster.OutdoorZoneIds.Add(garden.ZoneId);
+            }
+
             layout.Connectors.Add(new GeneratedConnectorPlan
             {
                 ConnectorId = "entrance_to_yard",
@@ -904,14 +970,123 @@ namespace MapEditorPrototype
                 ToCell = new Vector2Int(entranceX, gateZ)
             });
 
+            // Дорожка от входа во двор. Высота каждой точки — через провайдер,
+            // чтобы линия «легла» на террасы (плоская земля → всё на 0).
             if (!string.IsNullOrWhiteSpace(pathDefinitionId))
             {
                 builder.AddPath(pathDefinitionId, new List<Vector3>
                 {
-                    new Vector3(entranceX + 0.5f, 0f, gateZ + 0.5f),
-                    new Vector3(entranceX + 0.5f, 0f, -2.0f),
-                    new Vector3(entranceX + 0.5f, 0f, -0.5f)
+                    GroundPoint(entranceX, gateZ),
+                    GroundPoint(entranceX, -2),
+                    GroundPoint(entranceX, 0)
                 }, 1.5f);
+            }
+
+            // MVP-3.5: на стыке двор(0)→сад(+1) ставим уличную лестницу.
+            if (garden != null)
+            {
+                int boundaryZ = garden.Bounds.yMin;          // нижняя грань сада
+                int stairX = garden.Bounds.xMin + garden.Bounds.width / 2;
+                PlaceOutdoorStairAtBoundary(layout, builder, stairX, boundaryZ, fromLevel: 0, toLevel: 1);
+            }
+
+            // MVP-3.5b: наполнить двор и террасу растительностью (cat:outdoor),
+            // с учётом высоты зоны через groundProvider. Маска — пятно здания.
+            ScatterOutdoorZones(layout);
+        }
+
+        /// <summary>
+        /// Декор-скаттер по внешним зонам (двор/террасы) на их высоте.
+        /// Здание исключается из посадки. Использует тот же RoomFurnisher.
+        /// </summary>
+        private void ScatterOutdoorZones(GeneratedMapLayout layout)
+        {
+            if (furnisher == null) return;
+
+            // Маска: клетки здания + 1 клетка запаса — туда траву не сажаем.
+            HashSet<Vector2Int> blocked = new HashSet<Vector2Int>();
+            RectInt house = new RectInt(-1, -1, buildingWidth + 2, buildingLength + 2);
+            for (int x = house.xMin; x < house.xMax; x++)
+            {
+                for (int z = house.yMin; z < house.yMax; z++)
+                {
+                    blocked.Add(new Vector2Int(x, z));
+                }
+            }
+
+            int outdoorPlaced = 0;
+            int zonesProcessed = 0;
+            foreach (GeneratedOutdoorZonePlan zone in layout.OutdoorZones)
+            {
+                if (zone == null || zone.Bounds.width <= 0 || zone.Bounds.height <= 0) continue;
+
+                float zoneY = groundProvider.GetHeight(
+                    zone.Bounds.xMin + zone.Bounds.width / 2,
+                    zone.Bounds.yMin + zone.Bounds.height / 2);
+
+                // Плотность: двор реже, садовая терраса гуще.
+                float density = zone.ZoneId == "garden_terrace" ? 0.12f : 0.05f;
+
+                int placed = furnisher.ScatterArea(
+                    zone.Bounds, density, OutdoorScatterTags,
+                    floor: 0, occupied: blocked, baseYOffset: zoneY);
+                outdoorPlaced += placed;
+                zonesProcessed++;
+            }
+
+            int candidateStamps = furnisher.CountStampsByTags(OutdoorScatterTags);
+            Debug.Log($"[Generator] двор/террасы: зон={zonesProcessed}, " +
+                      $"посажено={outdoorPlaced}, штампов cat:outdoor в библиотеке={candidateStamps}.", this);
+        }
+
+        private static readonly string[] OutdoorScatterTags = { "cat:outdoor" };
+
+        /// <summary>Мировая точка на земле в клетке (x,z) с учётом высоты террасы.</summary>
+        private Vector3 GroundPoint(int x, int z)
+        {
+            return new Vector3(x + 0.5f, groundProvider.GetHeight(x, z), z + 0.5f);
+        }
+
+        /// <summary>
+        /// Поставить уличную лестницу/пандус на стыке двух террас.
+        /// Сначала пробуем штамп по тегу outdoorStairTag через furnisher;
+        /// если штампа нет — логический connector (валидатор учтёт связность),
+        /// плюс декор-плейсхолдер для видимости.
+        /// </summary>
+        private void PlaceOutdoorStairAtBoundary(GeneratedMapLayout layout, MapGenerationWorldStateBuilder builder,
+            int x, int z, int fromLevel, int toLevel)
+        {
+            float yLow = fromLevel * terraceLevelHeight;
+            float yHigh = toLevel * terraceLevelHeight;
+
+            layout.Connectors.Add(new GeneratedConnectorPlan
+            {
+                ConnectorId = $"terrace_stair_{fromLevel}_{toLevel}_{x}_{z}",
+                Kind = GeneratedConnectorKind.OutdoorPath,
+                FromId = "yard",
+                ToId = "garden_terrace",
+                FromFloor = 0,
+                ToFloor = 0,
+                FromCell = new Vector2Int(x, z - 1),
+                ToCell = new Vector2Int(x, z)
+            });
+
+            bool placed = false;
+            if (furnisher != null)
+            {
+                // Штамп лестницы (если есть в библиотеке) на нижнем уровне у стыка.
+                placed = furnisher.Place(
+                    new List<string> { outdoorStairTag },
+                    new Vector2Int(x, z - 1), floor: 0,
+                    rotationSteps: 0, fallbackDefinitionId: null);
+            }
+
+            if (!placed && !string.IsNullOrWhiteSpace(decorPlaceholderDefinitionId))
+            {
+                // Визуальный плейсхолдер «перепад уровня», чтобы стык был виден.
+                builder.AddFreeObject(
+                    decorPlaceholderDefinitionId,
+                    new Vector3(x + 0.5f, (yLow + yHigh) * 0.5f, z + 0.5f), 0, 0f);
             }
         }
 

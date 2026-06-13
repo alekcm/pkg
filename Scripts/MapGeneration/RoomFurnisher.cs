@@ -232,35 +232,60 @@ namespace MapEditorPrototype
         /// </summary>
         private int ScatterDecor(LocationDefData location, RectInt inner, int floor, HashSet<Vector2Int> occupied)
         {
-            if (!ScatterDecorEnabled || !useStamps) return 0;
-            LocationDecorData decor = location.decor;
-            if (decor == null || decor.density <= 0f || decor.filterTags == null || decor.filterTags.Count == 0)
-            {
-                return 0;
-            }
+            if (location.decor == null) return 0;
+            return ScatterArea(inner, location.decor.density, location.decor.filterTags, floor, occupied, 0f);
+        }
 
-            int area = Mathf.Max(0, inner.width) * Mathf.Max(0, inner.height);
+        /// <summary>
+        /// Публичный декор-скаттер по произвольному прямоугольнику (комната ИЛИ
+        /// внешняя зона). baseYOffset — высота земли в зоне (террасы): декор
+        /// эмитится на этой высоте через emitter.Emit(..., baseYOffset).
+        /// Для внешних зон с переменной высотой передавай baseYOffset на зону
+        /// (террасы дискретны — внутри зоны уровень постоянный).
+        /// Возвращает число поставленного декора.
+        /// </summary>
+        public int ScatterArea(RectInt rect, float density, IReadOnlyList<string> filterTags,
+            int floor, HashSet<Vector2Int> occupied, float baseYOffset = 0f)
+        {
+            if (!ScatterDecorEnabled || !useStamps) return 0;
+            if (density <= 0f || filterTags == null || filterTags.Count == 0) return 0;
+
+            int area = Mathf.Max(0, rect.width) * Mathf.Max(0, rect.height);
             if (area <= 0) return 0;
 
-            // Целевое число точек ≈ density * площадь. Радиус взаимного
-            // отталкивания вытекает из плотности (реже density → больше зазор).
-            int target = Mathf.Clamp(Mathf.RoundToInt(decor.density * area), 0, area);
+            // Считаем СВОБОДНУЮ площадь (исключая маску, напр. пятно здания во
+            // дворе), чтобы плотность относилась к реально доступной земле,
+            // а не к прямоугольнику, наполовину занятому домом.
+            int freeArea = area;
+            if (occupied != null && occupied.Count > 0)
+            {
+                freeArea = 0;
+                for (int x = rect.xMin; x < rect.xMax; x++)
+                {
+                    for (int y = rect.yMin; y < rect.yMax; y++)
+                    {
+                        if (!occupied.Contains(new Vector2Int(x, y))) freeArea++;
+                    }
+                }
+            }
+            if (freeArea <= 0) return 0;
+
+            int target = Mathf.Clamp(Mathf.RoundToInt(density * freeArea), 0, freeArea);
             if (target <= 0) return 0;
 
-            float minDist = Mathf.Max(1f, Mathf.Sqrt(area / (float)target) * 0.85f);
-
-            List<Vector2Int> accepted = PoissonCells(inner, minDist, target, occupied);
+            float minDist = Mathf.Max(1f, Mathf.Sqrt(freeArea / (float)target) * 0.85f);
+            List<Vector2Int> accepted = PoissonCells(rect, minDist, target, occupied);
 
             int placedDecor = 0;
             foreach (Vector2Int cell in accepted)
             {
-                StampData decorStamp = PickStampByTags(decor.filterTags);
-                if (decorStamp == null) break; // нет декор-штампов в палитре
+                StampData decorStamp = PickStampByTags(filterTags);
+                if (decorStamp == null) break; // нет подходящих штампов в палитре
 
                 Vector2Int fp = StampPlacementService.RotatedFootprint(decorStamp, 0);
                 if (!IsAreaFree(cell, fp, occupied)) continue;
 
-                StampWorldStateEmitter.EmitResult r = emitter.Emit(decorStamp, cell, 0, floor);
+                StampWorldStateEmitter.EmitResult r = emitter.Emit(decorStamp, cell, 0, floor, baseYOffset);
                 if (r.Objects > 0 || r.Walls > 0 || r.Paths > 0)
                 {
                     MarkOccupied(cell, fp, occupied);
@@ -283,7 +308,8 @@ namespace MapEditorPrototype
             if (rect.width <= 0 || rect.height <= 0) return accepted;
 
             float minDistSqr = minDist * minDist;
-            int attempts = target * 12; // запас попыток на отказы
+            // Запас попыток: больше для разреженных/маскированных областей.
+            int attempts = Mathf.Max(target * 20, rect.width * rect.height);
 
             for (int a = 0; a < attempts && accepted.Count < target; a++)
             {
@@ -514,6 +540,14 @@ namespace MapEditorPrototype
                 content = src.content,
                 sockets = src.sockets
             };
+        }
+
+        /// <summary>Сколько валидных штампов в библиотеке имеют ВСЕ указанные теги (диагностика).</summary>
+        public int CountStampsByTags(IReadOnlyList<string> tags)
+        {
+            if (library == null) return 0;
+            List<StampData> c = library.FindByTags(tags);
+            return c == null ? 0 : c.Count;
         }
 
         public string FormatStats()
