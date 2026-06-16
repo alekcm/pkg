@@ -346,7 +346,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &78179810
 RectTransform:
   m_ObjectHideFlags: 0
@@ -362,10 +362,10 @@ RectTransform:
   - {fileID: 2034984225}
   m_Father: {fileID: 1940553553}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 66, y: -24.099976}
+  m_SizeDelta: {x: 132, y: 48.2}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &78179811
 MonoBehaviour:
@@ -3350,6 +3350,63 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &839865319
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 679381263665391024, guid: 4024f2c808dec894f9dd82a14f052af7, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -2.6409001
+      objectReference: {fileID: 0}
+    - target: {fileID: 679381263665391024, guid: 4024f2c808dec894f9dd82a14f052af7, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.000000051392092
+      objectReference: {fileID: 0}
+    - target: {fileID: 679381263665391024, guid: 4024f2c808dec894f9dd82a14f052af7, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.50482184
+      objectReference: {fileID: 0}
+    - target: {fileID: 679381263665391024, guid: 4024f2c808dec894f9dd82a14f052af7, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 679381263665391024, guid: 4024f2c808dec894f9dd82a14f052af7, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 679381263665391024, guid: 4024f2c808dec894f9dd82a14f052af7, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 679381263665391024, guid: 4024f2c808dec894f9dd82a14f052af7, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 679381263665391024, guid: 4024f2c808dec894f9dd82a14f052af7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 679381263665391024, guid: 4024f2c808dec894f9dd82a14f052af7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 679381263665391024, guid: 4024f2c808dec894f9dd82a14f052af7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8866367713329723058, guid: 4024f2c808dec894f9dd82a14f052af7, type: 3}
+      propertyPath: m_Name
+      value: 1_PARTS
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 4024f2c808dec894f9dd82a14f052af7, type: 3}
 --- !u!1 &840668012
 GameObject:
   m_ObjectHideFlags: 0
@@ -3976,7 +4033,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1109773221
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3992,10 +4049,10 @@ RectTransform:
   - {fileID: 143650644}
   m_Father: {fileID: 1940553553}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 99, y: -24.099976}
+  m_SizeDelta: {x: 198, y: 48.2}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1109773222
 MonoBehaviour:
@@ -9845,6 +9902,9 @@ MonoBehaviour:
   useStampsWhenAvailable: 1
   useLocationDefsWhenAvailable: 1
   decorCellSize: 0.2
+  enableTerraces: 1
+  terraceLevelHeight: 1
+  outdoorStairTag: sys:stairs_outdoor
   seed: 12345
   playerCount: 16
   includeCourtroom: 1
@@ -10423,7 +10483,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2115979649
 RectTransform:
   m_ObjectHideFlags: 0
@@ -10439,10 +10499,10 @@ RectTransform:
   - {fileID: 324257812}
   m_Father: {fileID: 659942720}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 332, y: -76.5}
+  m_SizeDelta: {x: 126, y: 45}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2115979650
 MonoBehaviour:
@@ -10768,3 +10828,4 @@ SceneRoots:
   - {fileID: 559081474}
   - {fileID: 1347838686}
   - {fileID: 1120870371}
+  - {fileID: 839865319}
