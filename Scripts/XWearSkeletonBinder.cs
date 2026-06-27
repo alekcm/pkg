@@ -1,6 +1,6 @@
-// XWearSkeletonBinder.cs (v11 - Correct Hips-to-Hips Alignment)
-// Proper alignment: matches clothing's own Hips bone to character's Hips bone
-// This fixes both position and rotation issues caused by different parent rotations
+// XWearSkeletonBinder.cs
+// Synchronizes VRoid .xwear clothing skeletons to any animated character
+// via relative animation angle changes (Delta Poses). Fully non-destructive and stable.
 
 using System.Collections.Generic;
 using UnityEngine;
@@ -8,338 +8,379 @@ using UnityEngine;
 namespace XWearImporter
 {
     [ExecuteAlways]
-    [AddComponentMenu("XWear/Skeleton Binder (v11)")]
+    [AddComponentMenu("XWear/Skeleton Binder")]
     public class XWearSkeletonBinder : MonoBehaviour
     {
         public enum BindMode
         {
-            DirectSMRLink,
+            [Tooltip("Synchronizes animation joint angles (Delta Poses) and matches Main Hips position. Safe and non-destructive for any rig.")]
             SmartRetargeting,
+
+            [Tooltip("Destructively overwrites SkinnedMeshRenderer bone references. Only compatible if body and clothes match completely in raw hierarchies.")]
+            DirectSMRLink,
+
+            [Tooltip("Directly copies raw world positions and rotations.")]
             WorldPoseFollower
         }
 
-        [Header("Core Settings")]
-        public BindMode bindMode = BindMode.DirectSMRLink;
+        [Header("Architecture")]
+        public BindMode bindMode = BindMode.SmartRetargeting;
+
+        [Tooltip("The root Transform of the animated character (e.g. the model containing mixamorig:Hips).")]
         public Transform mainCharacterRoot;
+
+        [Tooltip("List of imported XWear clothing root instances attached to this character.")]
         public List<Transform> clothingRoots = new List<Transform>();
 
-        [Header("Automatic Alignment (Hips-to-Hips)")]
-        [Tooltip("Automatically align clothing's own Hips bone to character's Hips")]
-        public bool autoAlignToHips = true;
+        [Header("Direct SMR Binding")]
+        [Tooltip("Before DirectSMRLink rebinds the SMR to the body bones, move the clothing root to the character root position. Rotation is controlled separately below so a manually fixed 180-degree clothing offset is not destroyed on Play.")]
+        public bool alignClothingRootToCharacterInDirectSMR = true;
 
-        [Header("Safety")]
-        public bool disableAutoScaleCompensation = true;
+        [Tooltip("Also copy the character root rotation to clothing roots before binding. Leave OFF if your XWear item needs a manual 180-degree rotation or a different prefab rotation. Position alignment still works when this is OFF.")]
+        public bool alignClothingRootRotationToCharacterInDirectSMR = false;
 
-        [Header("Debug")]
-        public bool enableDebugLogs = true;
-        public bool showGizmos = true;
+        [Tooltip("When DirectSMRLink replaces clothing bones with body bones, clone the mesh and rebuild bindposes preserving the original clothing skinning matrices. This fixes root rotation/scale differences such as Mixamo scale=100 and XWear/Mixamo axis offsets. No per-frame cost; it runs once during InitializeBinder().")]
+        public bool rebuildBindposesForDirectSMR = true;
 
-        private readonly Dictionary<Transform, Transform> _bodyToClothMap = new Dictionary<Transform, Transform>();
+        [Header("Crowd Optimization")]
+        public bool optimizeFarPhysics = true;
+        public float farDistanceThreshold = 15f;
+
+        private struct BoneLink
+        {
+            public Transform bodyBone;
+            public Transform clothBone;
+            
+            public Quaternion bodyStartLocalRot;
+            public Quaternion clothStartLocalRot;
+            public bool isRootHips;
+        }
+
+        private readonly List<BoneLink> _links = new List<BoneLink>();
+        private readonly List<XWearSpringBone> _springBones = new List<XWearSpringBone>();
+        private Camera _mainCam;
         private bool _isInitialized = false;
 
-        #region Public API
-
-        [ContextMenu("Rebind All Clothing")]
-        public void RebindAll() => InitializeBinder();
-
-        [ContextMenu("Restore Visibility")]
-        public void RestoreAllVisibility()
+        void Awake()
         {
-            foreach (var clothing in clothingRoots)
+            if (Application.isPlaying)
             {
-                if (clothing == null) continue;
-                clothing.gameObject.SetActive(true);
-
-                foreach (var name in new[] { "RootGameObject", "SkeletonRoot", "Armature" })
-                {
-                    var t = clothing.Find(name);
-                    if (t != null) t.gameObject.SetActive(true);
-                }
-
-                foreach (var smr in clothing.GetComponentsInChildren<SkinnedMeshRenderer>(true))
-                {
-                    smr.enabled = true;
-                    smr.gameObject.SetActive(true);
-                }
+                InitializeBinder();
             }
         }
 
-        [ContextMenu("Force Rebind")]
-        public void ForceRebind()
+        void Start()
         {
-            _isInitialized = false;
-            InitializeBinder();
+            if (Application.isPlaying && !_isInitialized)
+            {
+                InitializeBinder();
+            }
         }
 
-        #endregion
-
-        #region Initialization
-
-        private void Awake()
+        void OnValidate()
         {
-            if (Application.isPlaying) InitializeBinder();
-        }
-
-        private void OnValidate()
-        {
-            if (mainCharacterRoot == null) mainCharacterRoot = transform;
+            if (!Application.isPlaying)
+            {
+                foreach (var clothing in clothingRoots)
+                {
+                    RepairClothingSMR(clothing);
+                }
+            }
         }
 
         public void InitializeBinder()
         {
-            _bodyToClothMap.Clear();
+            _links.Clear();
+            _springBones.Clear();
 
-            if (mainCharacterRoot == null) mainCharacterRoot = transform;
+            if (mainCharacterRoot == null)
+                mainCharacterRoot = this.transform;
 
-            var bodyBones = new Dictionary<string, Transform>();
-            CollectBonesCanonically(mainCharacterRoot, bodyBones);
+            var excludedClothingRoots = new HashSet<Transform>();
+            foreach (var c in clothingRoots)
+            {
+                if (c != null)
+                    excludedClothingRoots.Add(c);
+            }
+
+            var mainBonesByName = new Dictionary<string, Transform>();
+            CollectBodyBonesCanonically(mainCharacterRoot, mainBonesByName, excludedClothingRoots);
+
+            _springBones.AddRange(this.GetComponentsInChildren<XWearSpringBone>(true));
 
             foreach (var clothing in clothingRoots)
             {
                 if (clothing == null) continue;
 
-                RestoreSingleVisibility(clothing);
-
-                if (autoAlignToHips)
-                    AlignClothingHipsToCharacterHips(clothing);
-
-                if (!disableAutoScaleCompensation)
-                    ApplyScaleCompensation(clothing);
-
+                // Perfectly non-destructive auto-repair
                 RepairClothingSMR(clothing);
 
-                if (bindMode == BindMode.DirectSMRLink)
-                    ApplyDirectSMRLink(clothing, bodyBones);
-                else
-                    ApplyDeltaOrWorldSync(clothing, bodyBones);
+                if (bindMode == BindMode.SmartRetargeting || bindMode == BindMode.WorldPoseFollower)
+                {
+                    var rootGO = clothing.Find("RootGameObject");
+                    if (rootGO == null) rootGO = clothing.Find("SkeletonRoot");
+                    if (rootGO != null) rootGO.gameObject.SetActive(true);
+
+                    var clothBones = new Dictionary<string, Transform>();
+                    CollectBonesCanonically(clothing, clothBones);
+
+                    foreach (var kvp in clothBones)
+                    {
+                        var clothBone = kvp.Value;
+                        if (mainBonesByName.TryGetValue(kvp.Key, out var bodyBone))
+                        {
+                            if (bodyBone != mainCharacterRoot && clothBone != clothing)
+                            {
+                                bool rootHips = kvp.Key.Contains("hips");
+
+                                _links.Add(new BoneLink
+                                {
+                                    bodyBone           = bodyBone,
+                                    clothBone          = clothBone,
+                                    bodyStartLocalRot  = bodyBone.localRotation,
+                                    clothStartLocalRot = clothBone.localRotation,
+                                    isRootHips         = rootHips
+                                });
+                            }
+                        }
+                    }
+
+                    _springBones.AddRange(clothing.GetComponentsInChildren<XWearSpringBone>(true));
+                }
+                else if (bindMode == BindMode.DirectSMRLink)
+                {
+                    if (alignClothingRootToCharacterInDirectSMR && mainCharacterRoot != null)
+                    {
+                        clothing.position = mainCharacterRoot.position;
+                        if (alignClothingRootRotationToCharacterInDirectSMR)
+                        {
+                            clothing.rotation = mainCharacterRoot.rotation;
+                        }
+                    }
+
+                    var smrs = clothing.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+                    foreach (var smr in smrs)
+                    {
+                        var curBones = smr.bones;
+                        var newBones = new Transform[curBones.Length];
+
+                        for (int b = 0; b < curBones.Length; b++)
+                        {
+                            var oldBone = curBones[b];
+                            if (oldBone != null)
+                            {
+                                string canon = GetCanonicalBoneName(oldBone.name);
+                                if (mainBonesByName.TryGetValue(canon, out var mainBone))
+                                {
+                                    newBones[b] = mainBone;
+                                    continue;
+                                }
+                            }
+                            newBones[b] = oldBone;
+                        }
+
+                        Transform newRootBone = smr.rootBone;
+                        if (smr.rootBone != null)
+                        {
+                            string rootCanon = GetCanonicalBoneName(smr.rootBone.name);
+                            if (mainBonesByName.TryGetValue(rootCanon, out var newRoot))
+                            {
+                                newRootBone = newRoot;
+                            }
+                        }
+
+                        // IMPORTANT:
+                        // DirectSMRLink changes the bones that drive the mesh. The imported
+                        // .xwear bindposes were authored against the clothing's own skeleton
+                        // (usually facing Unity +Z / Y=0). A Mixamo-returned body can have a
+                        // different root transform, commonly Y=180 (and sometimes scale 100).
+                        // If we only replace smr.bones and keep the old bindposes, Unity skins
+                        // vertices with: bodyBone * oldClothingBindpose, so the whole garment
+                        // gets the body's root delta baked in and appears rotated/misaligned.
+                        // Rebuilding bindposes once against the target body makes the current
+                        // rest pose the shared bind pose for body and clothing. This has no
+                        // per-frame CPU cost; it only creates a per-instance mesh copy.
+                        if (rebuildBindposesForDirectSMR && smr.sharedMesh != null)
+                        {
+                            RebuildDirectSMRBindposes(smr, curBones, newBones);
+                        }
+
+                        smr.bones = newBones;
+                        smr.rootBone = newRootBone;
+                    }
+
+                    var clothingSprings = clothing.GetComponentsInChildren<XWearSpringBone>(true);
+                    foreach (var cs in clothingSprings)
+                    {
+                        if (cs.transform.parent != null)
+                        {
+                            string parentCanon = GetCanonicalBoneName(cs.transform.parent.name);
+                            if (mainBonesByName.TryGetValue(parentCanon, out var newParent))
+                            {
+                                cs.transform.SetParent(newParent, true);
+                            }
+                        }
+                        _springBones.Add(cs);
+                    }
+
+                    var rootGO = clothing.Find("RootGameObject");
+                    if (rootGO == null) rootGO = clothing.Find("SkeletonRoot");
+                    if (rootGO != null) rootGO.gameObject.SetActive(false);
+                }
             }
 
+            _mainCam = Camera.main;
             _isInitialized = true;
-
-            if (enableDebugLogs)
-                Debug.Log($"[SkeletonBinder] Bound {clothingRoots.Count} items with Hips alignment");
         }
 
-        private void RestoreSingleVisibility(Transform clothingRoot)
+        static void RebuildDirectSMRBindposes(SkinnedMeshRenderer smr, Transform[] oldBones, Transform[] targetBones)
         {
-            if (clothingRoot == null) return;
-            clothingRoot.gameObject.SetActive(true);
-
-            foreach (var name in new[] { "RootGameObject", "SkeletonRoot", "Armature" })
-            {
-                var t = clothingRoot.Find(name);
-                if (t != null) t.gameObject.SetActive(true);
-            }
-        }
-
-        /// <summary>
-        /// Correctly aligns clothing by matching its own Hips bone to character's Hips bone.
-        /// This respects different parent rotations.
-        /// </summary>
-        private void AlignClothingHipsToCharacterHips(Transform clothingRoot)
-        {
-            if (clothingRoot == null || mainCharacterRoot == null) return;
-
-            Transform characterHips = FindHipsBone(mainCharacterRoot);
-            Transform clothingHips = FindHipsBone(clothingRoot);
-
-            if (characterHips == null)
-            {
-                if (enableDebugLogs) Debug.LogWarning("[SkeletonBinder] Character Hips not found");
+            Mesh sourceMesh = smr.sharedMesh;
+            if (sourceMesh == null || targetBones == null || targetBones.Length == 0)
                 return;
-            }
 
-            if (clothingHips == null)
+            Mesh reboundMesh = UnityEngine.Object.Instantiate(sourceMesh);
+            reboundMesh.name = sourceMesh.name + "_DirectSMRBound";
+
+            var newBindposes = new Matrix4x4[targetBones.Length];
+            var oldBindposes = sourceMesh.bindposes;
+            Matrix4x4 rendererLocalToWorld = smr.transform.localToWorldMatrix;
+
+            for (int i = 0; i < targetBones.Length; i++)
             {
-                // Fallback: just move root to character root
-                clothingRoot.position = mainCharacterRoot.position;
-                clothingRoot.rotation = mainCharacterRoot.rotation;
-                if (enableDebugLogs) Debug.LogWarning($"[SkeletonBinder] No Hips found in '{clothingRoot.name}', using fallback");
-                return;
+                Transform targetBone = targetBones[i];
+                Transform oldBone = oldBones != null && i < oldBones.Length ? oldBones[i] : null;
+                Matrix4x4 oldBindpose = oldBindposes != null && i < oldBindposes.Length
+                    ? oldBindposes[i]
+                    : Matrix4x4.identity;
+
+                if (targetBone == null)
+                {
+                    newBindposes[i] = oldBindpose;
+                    continue;
+                }
+
+                if (oldBone != null)
+                {
+                    // Preserve the current clothing skinning transform while swapping the
+                    // driver bone. Unity skins with: bone.localToWorldMatrix * bindpose.
+                    // We need:
+                    //     targetBone * newBindpose == oldBone * oldBindpose
+                    // Therefore:
+                    //     newBindpose = inverse(targetBone) * oldBone * oldBindpose
+                    // This is more correct than the generic bindpose formula when the
+                    // imported XWear skeleton has its own root rotation, scale, or axis
+                    // conversion, and it is exactly the case that caused visual 0/180
+                    // mismatches while the Inspector Transform looked correct.
+                    newBindposes[i] = targetBone.worldToLocalMatrix * oldBone.localToWorldMatrix * oldBindpose;
+                }
+                else
+                {
+                    // Fallback for a missing old bone: sample a standard bindpose from the
+                    // current renderer transform.
+                    newBindposes[i] = targetBone.worldToLocalMatrix * rendererLocalToWorld;
+                }
             }
 
-            // Calculate offset between clothing root and its own Hips
-            Vector3 offset = clothingHips.position - clothingRoot.position;
-
-            // Place clothing root so that its Hips lands exactly on character's Hips
-            clothingRoot.position = characterHips.position - offset;
-            clothingRoot.rotation = characterHips.rotation;
-
-            if (enableDebugLogs)
-                Debug.Log($"[SkeletonBinder] Aligned '{clothingRoot.name}' Hips-to-Hips");
+            reboundMesh.bindposes = newBindposes;
+            smr.sharedMesh = reboundMesh;
         }
 
-        private Transform FindHipsBone(Transform root)
+        void RepairClothingSMR(Transform clothing)
         {
-            string[] names = { "mixamorig:Hips", "Hips", "hips", "pelvis", "c_hips", "j_bip_c_hips" };
+            if (clothing == null) return;
 
-            foreach (string name in names)
-            {
-                Transform t = root.Find(name);
-                if (t != null) return t;
+            var rootGO = clothing.Find("RootGameObject");
+            if (rootGO == null) rootGO = clothing.Find("SkeletonRoot");
+            if (rootGO == null) return;
 
-                Transform deep = FindChildDeep(root, name);
-                if (deep != null) return deep;
-            }
+            rootGO.gameObject.SetActive(true);
 
-            return FindChildContaining(root, "hip") ?? FindChildContaining(root, "pelvis");
-        }
+            var clothBonesByName = new Dictionary<string, Transform>();
+            CollectBonesCanonically(rootGO, clothBonesByName);
 
-        private Transform FindChildDeep(Transform parent, string name)
-        {
-            if (parent.name == name) return parent;
-            for (int i = 0; i < parent.childCount; i++)
-            {
-                Transform result = FindChildDeep(parent.GetChild(i), name);
-                if (result != null) return result;
-            }
-            return null;
-        }
-
-        private Transform FindChildContaining(Transform parent, string contains)
-        {
-            if (parent.name.ToLower().Contains(contains)) return parent;
-            for (int i = 0; i < parent.childCount; i++)
-            {
-                Transform result = FindChildContaining(parent.GetChild(i), contains);
-                if (result != null) return result;
-            }
-            return null;
-        }
-
-        #endregion
-
-        #region Scale & Binding
-
-        private void ApplyScaleCompensation(Transform clothingRoot)
-        {
-            if (disableAutoScaleCompensation) return;
-            if (mainCharacterRoot == null || clothingRoot == null) return;
-
-            Transform armature = FindArmatureRecursive(mainCharacterRoot);
-            float scale = armature != null ? armature.lossyScale.x : mainCharacterRoot.lossyScale.x;
-
-            if (scale < 5f) return;
-            clothingRoot.localScale = Vector3.one * (1f / scale);
-        }
-
-        private Transform FindArmatureRecursive(Transform current)
-        {
-            if (current.name.ToLower().Contains("armature")) return current;
-            for (int i = 0; i < current.childCount; i++)
-            {
-                Transform found = FindArmatureRecursive(current.GetChild(i));
-                if (found != null) return found;
-            }
-            return null;
-        }
-
-        private void ApplyDirectSMRLink(Transform clothingRoot, Dictionary<string, Transform> bodyBones)
-        {
-            var smrs = clothingRoot.GetComponentsInChildren<SkinnedMeshRenderer>(true);
-
+            var smrs = clothing.GetComponentsInChildren<SkinnedMeshRenderer>(true);
             foreach (var smr in smrs)
             {
-                if (smr == null || smr.sharedMesh == null) continue;
+                var curBones = smr.bones;
+                var restoredBones = new Transform[curBones.Length];
 
-                smr.enabled = true;
-                smr.gameObject.SetActive(true);
-
-                var original = smr.bones;
-                var newBones = new Transform[original.Length];
-                bool mapped = false;
-
-                for (int i = 0; i < original.Length; i++)
+                for (int b = 0; b < curBones.Length; b++)
                 {
-                    if (original[i] == null) continue;
-
-                    string canon = GetCanonicalBoneName(original[i].name);
-
-                    if (bodyBones.TryGetValue(canon, out var bodyBone))
+                    var cb = curBones[b];
+                    if (cb != null)
                     {
-                        newBones[i] = bodyBone;
-                        mapped = true;
-                        if (!_bodyToClothMap.ContainsKey(bodyBone))
-                            _bodyToClothMap[bodyBone] = original[i];
+                        string canon = GetCanonicalBoneName(cb.name);
+                        if (clothBonesByName.TryGetValue(canon, out var nativeBone))
+                        {
+                            restoredBones[b] = nativeBone;
+                            continue;
+                        }
                     }
-                    else
-                    {
-                        newBones[i] = original[i];
-                    }
+                    restoredBones[b] = cb;
                 }
 
-                if (mapped)
-                {
-                    smr.bones = newBones;
-                    UpdateBindposes(smr, newBones);
+                smr.bones = restoredBones;
 
-                    if (smr.rootBone != null)
+                if (smr.rootBone != null)
+                {
+                    string rootCanon = GetCanonicalBoneName(smr.rootBone.name);
+                    if (clothBonesByName.TryGetValue(rootCanon, out var nativeRoot))
                     {
-                        string rootCanon = GetCanonicalBoneName(smr.rootBone.name);
-                        if (bodyBones.TryGetValue(rootCanon, out var newRoot))
-                            smr.rootBone = newRoot;
+                        smr.rootBone = nativeRoot;
                     }
                 }
             }
         }
 
-        private void UpdateBindposes(SkinnedMeshRenderer smr, Transform[] newBones)
-        {
-            if (smr.sharedMesh == null) return;
-
-            var bindposes = new Matrix4x4[newBones.Length];
-            for (int i = 0; i < newBones.Length; i++)
-            {
-                bindposes[i] = newBones[i] != null
-                    ? newBones[i].worldToLocalMatrix * smr.transform.localToWorldMatrix
-                    : Matrix4x4.identity;
-            }
-            smr.sharedMesh.bindposes = bindposes;
-        }
-
-        private void ApplyDeltaOrWorldSync(Transform clothingRoot, Dictionary<string, Transform> bodyBones)
-        {
-            var container = clothingRoot.Find("RootGameObject") ?? clothingRoot.Find("SkeletonRoot");
-            if (container != null) container.gameObject.SetActive(true);
-
-            var clothBones = new Dictionary<string, Transform>();
-            CollectBonesCanonically(clothingRoot, clothBones);
-
-            foreach (var kvp in clothBones)
-            {
-                if (bodyBones.TryGetValue(kvp.Key, out var bodyBone) &&
-                    bodyBone != mainCharacterRoot && kvp.Value != clothingRoot)
-                {
-                    _bodyToClothMap[bodyBone] = kvp.Value;
-                }
-            }
-        }
-
-        #endregion
-
-        #region Bone Utilities
-
-        private static void CollectBonesCanonically(Transform current, Dictionary<string, Transform> dict)
+        static void CollectBonesCanonically(Transform current, Dictionary<string, Transform> dict)
         {
             if (current == null) return;
+            
             string canon = GetCanonicalBoneName(current.name);
             if (!string.IsNullOrEmpty(canon) && !dict.ContainsKey(canon))
+            {
                 dict[canon] = current;
+            }
 
             for (int i = 0; i < current.childCount; i++)
+            {
                 CollectBonesCanonically(current.GetChild(i), dict);
+            }
         }
 
-        private static string GetCanonicalBoneName(string rawName)
+        static void CollectBodyBonesCanonically(Transform current, Dictionary<string, Transform> dict, HashSet<Transform> excludedRoots)
+        {
+            if (current == null) return;
+            if (excludedRoots != null && excludedRoots.Contains(current)) return;
+            
+            string canon = GetCanonicalBoneName(current.name);
+            if (!string.IsNullOrEmpty(canon) && !dict.ContainsKey(canon))
+            {
+                dict[canon] = current;
+            }
+
+            for (int i = 0; i < current.childCount; i++)
+            {
+                CollectBodyBonesCanonically(current.GetChild(i), dict, excludedRoots);
+            }
+        }
+
+        static string GetCanonicalBoneName(string rawName)
         {
             if (string.IsNullOrEmpty(rawName)) return "";
-            string n = rawName.ToLowerInvariant()
-                .Replace("mixamorig:", "").Replace("j_bip_c_", "").Replace("j_bip_l_", "l_")
-                .Replace("j_bip_r_", "r_").Replace("j_bip_", "").Replace("character_", "").Replace("_", "");
 
-            bool left = n.StartsWith("l") || n.Contains("left");
-            bool right = n.StartsWith("r") || n.Contains("right");
-            string side = left ? "l_" : right ? "r_" : "c_";
+            string n = rawName.ToLowerInvariant();
+
+            n = n.Replace("mixamorig:", "")
+                 .Replace("j_bip_c_", "")
+                 .Replace("j_bip_l_", "l_")
+                 .Replace("j_bip_r_", "r_")
+                 .Replace("j_bip_", "")
+                 .Replace("character_", "");
+
+            bool isLeft  = n.StartsWith("l_") || n.EndsWith("_l") || n.Contains("left");
+            bool isRight = n.StartsWith("r_") || n.EndsWith("_r") || n.Contains("right");
 
             string role = "";
             if (n.Contains("hips") || n.Contains("pelvis")) role = "hips";
@@ -348,66 +389,72 @@ namespace XWearImporter
             else if (n.Contains("spine")) role = "spine";
             else if (n.Contains("neck")) role = "neck";
             else if (n.Contains("head")) role = "head";
+            
             else if (n.Contains("shoulder")) role = "shoulder";
+            else if (n.Contains("forearm") || n.Contains("lowerarm")) role = "lowerarm";
             else if (n.Contains("upperarm") || n.Contains("arm")) role = "upperarm";
-            else if (n.Contains("lowerarm") || n.Contains("forearm")) role = "lowerarm";
             else if (n.Contains("hand")) role = "hand";
-            else if (n.Contains("upperleg") || n.Contains("upleg")) role = "upperleg";
-            else if (n.Contains("lowerleg") || n.Contains("calf")) role = "lowerleg";
+            
+            else if (n.Contains("upleg") || n.Contains("upperleg")) role = "upperleg";
+            else if (n.Contains("lowerleg") || n.Contains("calf") || (n.Contains("leg") && !n.Contains("upleg"))) role = "lowerleg";
             else if (n.Contains("foot")) role = "foot";
-            else if (n.Contains("toe")) role = "toes";
+            else if (n.Contains("toebase") || n.Contains("toes") || n.Contains("toe")) role = "toes";
 
-            return string.IsNullOrEmpty(role) ? n : side + role;
+            if (string.IsNullOrEmpty(role)) return n;
+
+            string side = isLeft ? "l_" : (isRight ? "r_" : "c_");
+            return side + role;
         }
 
-        private void RepairClothingSMR(Transform clothing)
+        void LateUpdate()
         {
-            if (clothing == null) return;
+            if (!Application.isPlaying || !_isInitialized) return;
 
-            var container = clothing.Find("RootGameObject") ?? clothing.Find("SkeletonRoot");
-            if (container == null) return;
-
-            container.gameObject.SetActive(true);
-
-            var clothBones = new Dictionary<string, Transform>();
-            CollectBonesCanonically(container, clothBones);
-
-            foreach (var smr in clothing.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            if (bindMode == BindMode.SmartRetargeting)
             {
-                if (smr.sharedMesh == null) continue;
-
-                var current = smr.bones;
-                var fixedBones = new Transform[current.Length];
-
-                for (int i = 0; i < current.Length; i++)
+                // Simple bulletproof non-destructive delta pose synchronization
+                for (int i = 0; i < _links.Count; i++)
                 {
-                    if (current[i] == null) continue;
-                    string canon = GetCanonicalBoneName(current[i].name);
-                    fixedBones[i] = clothBones.TryGetValue(canon, out var correct) ? correct : current[i];
-                }
+                    var link = _links[i];
+                    if (link.bodyBone == null || link.clothBone == null) continue;
 
-                smr.bones = fixedBones;
-            }
-        }
+                    if (link.isRootHips)
+                    {
+                        link.clothBone.position = link.bodyBone.position;
+                    }
 
-        #endregion
-
-        #region Gizmos
-
-        private void OnDrawGizmos()
-        {
-            if (!showGizmos || mainCharacterRoot == null) return;
-
-            foreach (var kvp in _bodyToClothMap)
-            {
-                if (kvp.Key != null && kvp.Value != null)
-                {
-                    Gizmos.color = Color.green;
-                    Gizmos.DrawLine(kvp.Key.position, kvp.Value.position);
+                    Quaternion deltaRot = link.bodyBone.localRotation * Quaternion.Inverse(link.bodyStartLocalRot);
+                    link.clothBone.localRotation = deltaRot * link.clothStartLocalRot;
                 }
             }
-        }
+            else if (bindMode == BindMode.WorldPoseFollower)
+            {
+                for (int i = 0; i < _links.Count; i++)
+                {
+                    var link = _links[i];
+                    if (link.bodyBone != null && link.clothBone != null)
+                    {
+                        link.clothBone.position = link.bodyBone.position;
+                        link.clothBone.rotation = link.bodyBone.rotation;
+                    }
+                }
+            }
 
-        #endregion
+            // Crowd LOD
+            if (optimizeFarPhysics && Time.frameCount % 30 == 0 && _mainCam != null)
+            {
+                float distSqr = (this.transform.position - _mainCam.transform.position).sqrMagnitude;
+                bool far = distSqr > (farDistanceThreshold * farDistanceThreshold);
+
+                for (int s = 0; s < _springBones.Count; s++)
+                {
+                    var sb = _springBones[s];
+                    if (sb != null)
+                    {
+                        sb.useCollisions = !far;
+                    }
+                }
+            }
+        }
     }
 }
