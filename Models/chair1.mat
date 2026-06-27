@@ -41,6 +41,10 @@ Material:
         m_Texture: {fileID: 2800000, guid: 713acbaa6daf05547b7a69d29c1ea26c, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _BaseMap:
+        m_Texture: {fileID: 2800000, guid: 713acbaa6daf05547b7a69d29c1ea26c, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _BentNormalMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -172,6 +176,7 @@ Material:
     - _ATDistance: 1
     - _AddPrecomputedVelocity: 0
     - _AlbedoAffectEmissive: 0
+    - _AlphaClip: 1
     - _AlphaCutoff: 0.5
     - _AlphaCutoffEnable: 0
     - _AlphaCutoffPostpass: 0.5
@@ -186,6 +191,7 @@ Material:
     - _BumpScale: 1
     - _CoatMask: 0
     - _ConservativeDepthOffsetEnable: 0
+    - _Cull: 2
     - _CullMode: 2
     - _CullModeForward: 2
     - _Cutoff: 0.5
@@ -215,6 +221,9 @@ Material:
     - _ExcludeFromTUAndAA: 0
     - _Glossiness: 0.5
     - _GlossyReflections: 1
+    - _HatchingBlend: 0.65
+    - _HatchingDensity: 250
+    - _HatchingSharpness: 0.12
     - _HeightAmplitude: 0.02
     - _HeightCenter: 0.5
     - _HeightMapParametrization: 0
@@ -228,6 +237,7 @@ Material:
     - _Ior: 1.5
     - _IridescenceMask: 1
     - _IridescenceThickness: 1
+    - _LightIntensity: 1.25
     - _LinkDetailsWithBase: 1
     - _MaterialID: 1
     - _MaterialTypeMask: 2
@@ -241,6 +251,7 @@ Material:
     - _ObjectSpaceUVMappingEmissive: 0
     - _OcclusionStrength: 1
     - _OpaqueCullMode: 2
+    - _OutlineWidth: 0
     - _PPDLodThreshold: 5
     - _PPDMaxSamples: 15
     - _PPDMinSamples: 5
@@ -254,6 +265,8 @@ Material:
     - _RefractionModel: 0
     - _RenderQueueType: 1
     - _RequireSplitLighting: 0
+    - _ShadowSmoothness: 0.1
+    - _ShadowThreshold: -0.05
     - _Smoothness: 0.5
     - _SmoothnessRemapMax: 1
     - _SmoothnessRemapMin: 0
@@ -314,6 +327,8 @@ Material:
     - _EmissiveColorLDR: {r: 0, g: 0, b: 0, a: 1}
     - _InvPrimScale: {r: 1, g: 1, b: 0, a: 0}
     - _IridescenceThicknessRemap: {r: 0, g: 1, b: 0, a: 0}
+    - _OutlineColor: {r: 0.1, g: 0.05, b: 0.05, a: 1}
+    - _ShadeColor: {r: 0.78, g: 0.74, b: 0.76, a: 1}
     - _SpecularColor: {r: 1, g: 1, b: 1, a: 1}
     - _ThicknessRemap: {r: 0, g: 1, b: 0, a: 0}
     - _TransmittanceColor: {r: 1, g: 1, b: 1, a: 1}

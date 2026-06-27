@@ -1,0 +1,300 @@
+{
+  "package": "C:\\Users\\Алекс\\Desktop\\1.package",
+  "out_dir": "extracted\\1",
+  "total_resources": 60,
+  "meshes": [
+    {
+      "name": "1_mlod00_g01",
+      "verts": 2013,
+      "faces": 1585,
+      "files": [
+        "1_mlod00_g01.obj",
+        "1_mlod00_g01.fbx"
+      ]
+    },
+    {
+      "name": "1_mlod00_g02",
+      "verts": 579,
+      "faces": 387,
+      "files": [
+        "1_mlod00_g02.obj",
+        "1_mlod00_g02.fbx"
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "name": "1_tex00",
+      "status": "unshuffled DST1 -> decoded DDS (RGBA) -> PNG via Pillow",
+      "file": "1_tex00.png"
+    },
+    {
+      "name": "1_tex01",
+      "status": "unshuffled DST5 -> decoded DDS (RGBA) -> PNG via Pillow",
+      "file": "1_tex01.png"
+    },
+    {
+      "name": "1_tex02",
+      "status": "unshuffled DST5 -> decoded DDS (RGBA) -> PNG via Pillow",
+      "file": "1_tex02.png"
+    },
+    {
+      "name": "1_tex03",
+      "status": "unshuffled DST1 -> decoded DDS (RGBA) -> PNG via Pillow",
+      "file": "1_tex03.png"
+    },
+    {
+      "name": "1_tex04",
+      "status": "unshuffled DST1 -> decoded DDS (RGBA) -> PNG via Pillow",
+      "file": "1_tex04.png"
+    },
+    {
+      "name": "1_tex05",
+      "status": "unshuffled DST1 -> decoded DDS (RGBA) -> PNG via Pillow",
+      "file": "1_tex05.png"
+    },
+    {
+      "name": "1_tex06",
+      "status": "unshuffled DST1 -> decoded DDS (RGBA) -> PNG via Pillow",
+      "file": "1_tex06.png"
+    },
+    {
+      "name": "1_tex07",
+      "status": "unshuffled DST1 -> decoded DDS (RGBA) -> PNG via Pillow",
+      "file": "1_tex07.png"
+    },
+    {
+      "name": "1_tex08",
+      "status": "unshuffled DST1 -> decoded DDS (RGBA) -> PNG via Pillow",
+      "file": "1_tex08.png"
+    },
+    {
+      "name": "1_tex09",
+      "status": "unshuffled DST1 -> decoded DDS (RGBA) -> PNG via Pillow",
+      "file": "1_tex09.png"
+    },
+    {
+      "name": "1_tex10",
+      "status": "unshuffled DST1 -> decoded DDS (RGBA) -> PNG via Pillow",
+      "file": "1_tex10.png"
+    },
+    {
+      "name": "1_tex11",
+      "status": "unshuffled DST1 -> decoded DDS (RGBA) -> PNG via Pillow",
+      "file": "1_tex11.png"
+    },
+    {
+      "name": "1_tex12",
+      "status": "unshuffled DST1 -> decoded DDS (RGBA) -> PNG via Pillow",
+      "file": "1_tex12.png"
+    },
+    {
+      "name": "1_tex13",
+      "status": "unshuffled DST5 -> decoded DDS (RGBA) -> PNG via Pillow",
+      "file": "1_tex13.png"
+    },
+    {
+      "name": "1_tex14",
+      "status": "unshuffled DST5 -> decoded DDS (RGBA) -> PNG via Pillow",
+      "file": "1_tex14.png"
+    },
+    {
+      "name": "1_tex15",
+      "status": "unshuffled DST1 -> decoded DDS (RGBA) -> PNG via Pillow",
+      "file": "1_tex15.png"
+    }
+  ],
+  "materials": [
+    {
+      "name": "1_mlod00_g01_swatch00_material",
+      "pipeline": "hdrp",
+      "swatch": 0,
+      "file": "1_mlod00_g01_swatch00_material.mat",
+      "diffuse": "1_tex00.png",
+      "normal": "1_tex01.png",
+      "specular": null
+    },
+    {
+      "name": "1_mlod00_g01_swatch01_material",
+      "pipeline": "hdrp",
+      "swatch": 1,
+      "file": "1_mlod00_g01_swatch01_material.mat",
+      "diffuse": "1_tex03.png",
+      "normal": "1_tex01.png",
+      "specular": null
+    },
+    {
+      "name": "1_mlod00_g01_swatch02_material",
+      "pipeline": "hdrp",
+      "swatch": 2,
+      "file": "1_mlod00_g01_swatch02_material.mat",
+      "diffuse": "1_tex04.png",
+      "normal": "1_tex01.png",
+      "specular": null
+    },
+    {
+      "name": "1_mlod00_g01_swatch03_material",
+      "pipeline": "hdrp",
+      "swatch": 3,
+      "file": "1_mlod00_g01_swatch03_material.mat",
+      "diffuse": "1_tex05.png",
+      "normal": "1_tex01.png",
+      "specular": null
+    },
+    {
+      "name": "1_mlod00_g01_swatch04_material",
+      "pipeline": "hdrp",
+      "swatch": 4,
+      "file": "1_mlod00_g01_swatch04_material.mat",
+      "diffuse": "1_tex06.png",
+      "normal": "1_tex01.png",
+      "specular": null
+    },
+    {
+      "name": "1_mlod00_g01_swatch05_material",
+      "pipeline": "hdrp",
+      "swatch": 5,
+      "file": "1_mlod00_g01_swatch05_material.mat",
+      "diffuse": "1_tex07.png",
+      "normal": "1_tex01.png",
+      "specular": null
+    },
+    {
+      "name": "1_mlod00_g01_swatch06_material",
+      "pipeline": "hdrp",
+      "swatch": 6,
+      "file": "1_mlod00_g01_swatch06_material.mat",
+      "diffuse": "1_tex08.png",
+      "normal": "1_tex01.png",
+      "specular": null
+    },
+    {
+      "name": "1_mlod00_g01_swatch07_material",
+      "pipeline": "hdrp",
+      "swatch": 7,
+      "file": "1_mlod00_g01_swatch07_material.mat",
+      "diffuse": "1_tex09.png",
+      "normal": "1_tex01.png",
+      "specular": null
+    },
+    {
+      "name": "1_mlod00_g01_swatch08_material",
+      "pipeline": "hdrp",
+      "swatch": 8,
+      "file": "1_mlod00_g01_swatch08_material.mat",
+      "diffuse": "1_tex10.png",
+      "normal": "1_tex01.png",
+      "specular": null
+    },
+    {
+      "name": "1_mlod00_g01_swatch09_material",
+      "pipeline": "hdrp",
+      "swatch": 9,
+      "file": "1_mlod00_g01_swatch09_material.mat",
+      "diffuse": "1_tex11.png",
+      "normal": "1_tex01.png",
+      "specular": null
+    },
+    {
+      "name": "1_mlod00_g02_swatch00_material",
+      "pipeline": "hdrp",
+      "swatch": 0,
+      "file": "1_mlod00_g02_swatch00_material.mat",
+      "diffuse": "1_tex12.png",
+      "normal": "1_tex13.png",
+      "specular": null
+    },
+    {
+      "name": "1_mlod00_g02_swatch01_material",
+      "pipeline": "hdrp",
+      "swatch": 1,
+      "file": "1_mlod00_g02_swatch01_material.mat",
+      "diffuse": "1_tex15.png",
+      "normal": "1_tex13.png",
+      "specular": null
+    },
+    {
+      "name": "1_mlod00_g02_swatch02_material",
+      "pipeline": "hdrp",
+      "swatch": 2,
+      "file": "1_mlod00_g02_swatch02_material.mat",
+      "diffuse": "1_tex12.png",
+      "normal": "1_tex13.png",
+      "specular": null
+    },
+    {
+      "name": "1_mlod00_g02_swatch03_material",
+      "pipeline": "hdrp",
+      "swatch": 3,
+      "file": "1_mlod00_g02_swatch03_material.mat",
+      "diffuse": "1_tex12.png",
+      "normal": "1_tex13.png",
+      "specular": null
+    },
+    {
+      "name": "1_mlod00_g02_swatch04_material",
+      "pipeline": "hdrp",
+      "swatch": 4,
+      "file": "1_mlod00_g02_swatch04_material.mat",
+      "diffuse": "1_tex12.png",
+      "normal": "1_tex13.png",
+      "specular": null
+    },
+    {
+      "name": "1_mlod00_g02_swatch05_material",
+      "pipeline": "hdrp",
+      "swatch": 5,
+      "file": "1_mlod00_g02_swatch05_material.mat",
+      "diffuse": "1_tex15.png",
+      "normal": "1_tex13.png",
+      "specular": null
+    },
+    {
+      "name": "1_mlod00_g02_swatch06_material",
+      "pipeline": "hdrp",
+      "swatch": 6,
+      "file": "1_mlod00_g02_swatch06_material.mat",
+      "diffuse": "1_tex15.png",
+      "normal": "1_tex13.png",
+      "specular": null
+    },
+    {
+      "name": "1_mlod00_g02_swatch07_material",
+      "pipeline": "hdrp",
+      "swatch": 7,
+      "file": "1_mlod00_g02_swatch07_material.mat",
+      "diffuse": "1_tex15.png",
+      "normal": "1_tex13.png",
+      "specular": null
+    },
+    {
+      "name": "1_mlod00_g02_swatch08_material",
+      "pipeline": "hdrp",
+      "swatch": 8,
+      "file": "1_mlod00_g02_swatch08_material.mat",
+      "diffuse": "1_tex12.png",
+      "normal": "1_tex13.png",
+      "specular": null
+    },
+    {
+      "name": "1_mlod00_g02_swatch09_material",
+      "pipeline": "hdrp",
+      "swatch": 9,
+      "file": "1_mlod00_g02_swatch09_material.mat",
+      "diffuse": "1_tex12.png",
+      "normal": "1_tex13.png",
+      "specular": null
+    },
+    {
+      "name": "S4ExtractMaterialFixer",
+      "pipeline": "hdrp",
+      "file": "Editor/S4ExtractMaterialFixer_bd3cc5b3a3.cs",
+      "diffuse": null,
+      "normal": null,
+      "specular": null
+    }
+  ],
+  "prefabs": [],
+  "raw": [],
+  "errors": []
+}

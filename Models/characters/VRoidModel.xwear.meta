@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 5715a3d9f02837d4095e20512366becb
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: c9f9cd33e98857a43a2ebc5dafccc0be, type: 3}
+  importMesh: 1
+  importSkeleton: 1
+  importMaterials: 1
+  importTextures: 1
+  importScale: 1
+  flipZ: 1

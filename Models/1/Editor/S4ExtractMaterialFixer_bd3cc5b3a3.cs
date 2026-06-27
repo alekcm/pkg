@@ -32,6 +32,14 @@ public static class S4ExtractMaterialFixer_bd3cc5b3a3
         public PartAsset(string asset, string mat) { assetName = asset; materialName = mat; }
     }
 
+    struct BreakSpec
+    {
+        public string intactAssetName;
+        public string materialName;
+        public string[] brokenAssetNames;
+        public BreakSpec(string intactAsset, string mat, string[] brokenAssets) { intactAssetName = intactAsset; materialName = mat; brokenAssetNames = brokenAssets; }
+    }
+
     static readonly Entry[] Entries = new Entry[]
     {
         new Entry("1_mlod00_g01_swatch00_material", "1_tex00", "1_tex01", ""),
@@ -70,360 +78,13 @@ public static class S4ExtractMaterialFixer_bd3cc5b3a3
 
     static readonly PartAsset[] PartAssets = new PartAsset[]
     {
-        new PartAsset("1_mlod00_g01_part00", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part01", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part02", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part03", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part04", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part05", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part06", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part07", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part08", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part09", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part10", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part11", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part12", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part13", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part14", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part15", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part16", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part17", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part18", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part19", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part20", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part21", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part22", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part23", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part24", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part25", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part26", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part27", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part28", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part29", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part30", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part31", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part32", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part33", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part34", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part35", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part36", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part37", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part38", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part39", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part40", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part41", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part42", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part43", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part44", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part45", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part46", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part47", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part48", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part49", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part50", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part51", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part52", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part53", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part54", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part55", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part56", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part57", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part58", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part59", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part60", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part61", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part62", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part63", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part64", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part65", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part66", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part67", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part68", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part69", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part70", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part71", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part72", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part73", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part74", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part75", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part76", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part77", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part78", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part79", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part80", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part81", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part82", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part83", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part84", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part85", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part86", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part87", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part88", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part89", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part90", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part91", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part92", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part93", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part94", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part95", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part96", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part97", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part98", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part99", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part100", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part101", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part102", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part103", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part104", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part105", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part106", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part107", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part108", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part109", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part110", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part111", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part112", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part113", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part114", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part115", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part116", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part117", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part118", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part119", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part120", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part121", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part122", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part123", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part124", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part125", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part126", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part127", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part128", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part129", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part130", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part131", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part132", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part133", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part134", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part135", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part136", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part137", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part138", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part139", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part140", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part141", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part142", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part143", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part144", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part145", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part146", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part147", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part148", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part149", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part150", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part151", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part152", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part153", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part154", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part155", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part156", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part157", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part158", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part159", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part160", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part161", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part162", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part163", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part164", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part165", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part166", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part167", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part168", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part169", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part170", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part171", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part172", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part173", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part174", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part175", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part176", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part177", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part178", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part179", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part180", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part181", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part182", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part183", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part184", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part185", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part186", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part187", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part188", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part189", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part190", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part191", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part192", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part193", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part194", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part195", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part196", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part197", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part198", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part199", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part200", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part201", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part202", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part203", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part204", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part205", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part206", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part207", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part208", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part209", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part210", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part211", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part212", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part213", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part214", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part215", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part216", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part217", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part218", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part219", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part220", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part221", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part222", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part223", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part224", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part225", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part226", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part227", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part228", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part229", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part230", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part231", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part232", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part233", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part234", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part235", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part236", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part237", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part238", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part239", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part240", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part241", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part242", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part243", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part244", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part245", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part246", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part247", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part248", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part249", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part250", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part251", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part252", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g01_part253", "1_mlod00_g01_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part00", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part01", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part02", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part03", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part04", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part05", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part06", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part07", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part08", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part09", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part10", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part11", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part12", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part13", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part14", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part15", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part16", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part17", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part18", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part19", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part20", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part21", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part22", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part23", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part24", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part25", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part26", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part27", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part28", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part29", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part30", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part31", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part32", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part33", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part34", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part35", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part36", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part37", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part38", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part39", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part40", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part41", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part42", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part43", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part44", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part45", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part46", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part47", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part48", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part49", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part50", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part51", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part52", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part53", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part54", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part55", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part56", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part57", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part58", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part59", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part60", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part61", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part62", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part63", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part64", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part65", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part66", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part67", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part68", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part69", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part70", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part71", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part72", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part73", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part74", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part75", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part76", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part77", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part78", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part79", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part80", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part81", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part82", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part83", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part84", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part85", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part86", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part87", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part88", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part89", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part90", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part91", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part92", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part93", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part94", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part95", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part96", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part97", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part98", "1_mlod00_g02_swatch00_material"),
-        new PartAsset("1_mlod00_g02_part99", "1_mlod00_g02_swatch00_material"),
+        new PartAsset("1_mlod00_g01", "1_mlod00_g01_swatch00_material"),
+        new PartAsset("1_mlod00_g02", "1_mlod00_g02_swatch00_material"),
+    };
+
+    static readonly BreakSpec[] BreakSpecs = new BreakSpec[]
+    {
+
     };
 
     static S4ExtractMaterialFixer_bd3cc5b3a3()
@@ -484,13 +145,12 @@ public static class S4ExtractMaterialFixer_bd3cc5b3a3
         }
 
         int assigned = AssignMappedMaterialsToSceneMeshes();
-        string readyPrefab = CreateReadyPrefab();
         string partsPrefab = CreatePartsPrefab();
 
-        if (changed > 0 || assigned > 0 || !string.IsNullOrEmpty(readyPrefab) || !string.IsNullOrEmpty(partsPrefab))
+        if (changed > 0 || assigned > 0 || !string.IsNullOrEmpty(partsPrefab))
         {
             AssetDatabase.SaveAssets();
-            Debug.Log("s4extract: fixed " + changed + " material(s), assigned mapped materials to " + assigned + " renderer(s), ready prefab: " + readyPrefab + ", parts prefab: " + partsPrefab + ", shader: " + shader.name);
+            Debug.Log("s4extract: fixed " + changed + " material(s), assigned mapped materials to " + assigned + " renderer(s), parts prefab: " + partsPrefab + ", shader: " + shader.name);
         }
     }
 
@@ -555,30 +215,143 @@ public static class S4ExtractMaterialFixer_bd3cc5b3a3
             GameObject model = FindModelAsset(pa.assetName);
             if (model == null) continue;
             Material target = FindMaterial(pa.materialName) ?? first;
-            GameObject child = (GameObject)PrefabUtility.InstantiatePrefab(model);
-            if (child == null) child = Object.Instantiate(model);
-            child.name = pa.assetName;
-            child.transform.SetParent(root.transform, false);
 
-            foreach (Renderer r in child.GetComponentsInChildren<Renderer>(true))
+            GameObject pieceRoot = new GameObject(pa.assetName);
+            pieceRoot.transform.SetParent(root.transform, false);
+            var breakable = pieceRoot.AddComponent<S4BreakablePart>();
+            breakable.breakOnCollision = false;
+            breakable.breakImpulseThreshold = 8f;
+
+            GameObject intact = (GameObject)PrefabUtility.InstantiatePrefab(model);
+            if (intact == null) intact = Object.Instantiate(model);
+            intact.name = "Intact";
+            intact.transform.SetParent(pieceRoot.transform, false);
+            ApplyMaterialAndPhysics(intact, target, 2f);
+            breakable.intactRoot = intact;
+
+            BreakSpec spec;
+            var brokenRoots = new System.Collections.Generic.List<GameObject>();
+            if (TryGetBreakSpec(pa.assetName, out spec) && spec.brokenAssetNames != null)
+            {
+                for (int i = 0; i < spec.brokenAssetNames.Length; i++)
+                {
+                    string brokenAssetName = spec.brokenAssetNames[i];
+                    GameObject brokenModel = FindModelAsset(brokenAssetName);
+                    if (brokenModel == null) continue;
+                    GameObject broken = (GameObject)PrefabUtility.InstantiatePrefab(brokenModel);
+                    if (broken == null) broken = Object.Instantiate(brokenModel);
+                    broken.name = "Broken_" + i;
+                    broken.transform.SetParent(pieceRoot.transform, false);
+                    ApplyMaterialAndPhysics(broken, target, 1f);
+                    broken.SetActive(false);
+                    brokenRoots.Add(broken);
+                }
+            }
+            breakable.brokenRoots = brokenRoots.ToArray();
+            added++;
+        }
+
+        if (added == 0)
+        {
+            Object.DestroyImmediate(root);
+            return "";
+        }
+
+        PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+        Object.DestroyImmediate(root);
+        return prefabPath;
+    }
+
+    static bool TryGetBreakSpec(string intactAssetName, out BreakSpec spec)
+    {
+        foreach (BreakSpec bs in BreakSpecs)
+        {
+            if (bs.intactAssetName == intactAssetName)
+            {
+                spec = bs;
+                return true;
+            }
+        }
+        spec = default;
+        return false;
+    }
+
+    static void ApplyMaterialAndPhysics(GameObject root, Material target, float mass)
+    {
+        foreach (Renderer r in root.GetComponentsInChildren<Renderer>(true))
+        {
+            Material[] mats = r.sharedMaterials;
+            if (mats == null || mats.Length == 0) mats = new Material[] { target };
+            for (int i = 0; i < mats.Length; i++) mats[i] = target;
+            r.sharedMaterials = mats;
+        }
+
+        Rigidbody rb = root.GetComponent<Rigidbody>();
+        if (rb == null) rb = root.AddComponent<Rigidbody>();
+        rb.mass = mass;
+        rb.linearDamping = 0.05f;
+        rb.angularDamping = 0.05f;
+        rb.useGravity = true;
+        rb.isKinematic = false;
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
+        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+
+        foreach (MeshFilter mf in root.GetComponentsInChildren<MeshFilter>(true))
+        {
+            if (mf.sharedMesh == null) continue;
+            MeshCollider mc = mf.GetComponent<MeshCollider>();
+            if (mc == null) mc = mf.gameObject.AddComponent<MeshCollider>();
+            mc.sharedMesh = mf.sharedMesh;
+            mc.convex = true;
+        }
+    }
+
+    static string CreateBreakablePrefab()
+    {
+        if (Entries.Length == 0 || BreakSpecs.Length == 0) return "";
+        Material first = FindMaterial(Entries[0].materialName);
+        if (first == null) return "";
+
+        string matPath = AssetDatabase.GetAssetPath(first);
+        if (string.IsNullOrEmpty(matPath)) return "";
+        string folder = Path.GetDirectoryName(matPath).Replace("\\", "/");
+        string prefabPath = folder + "/1_BREAKABLE.prefab";
+
+        GameObject root = new GameObject("1_BREAKABLE");
+        int added = 0;
+        foreach (BreakSpec bs in BreakSpecs)
+        {
+            GameObject intactModel = FindModelAsset(bs.intactAssetName);
+            if (intactModel == null || bs.brokenAssetNames == null || bs.brokenAssetNames.Length == 0) continue;
+            Material target = FindMaterial(bs.materialName) ?? first;
+
+            GameObject pieceRoot = new GameObject(bs.intactAssetName);
+            pieceRoot.transform.SetParent(root.transform, false);
+            var breakable = pieceRoot.AddComponent<S4BreakablePart>();
+            breakable.breakOnCollision = false;
+            breakable.breakImpulseThreshold = 8f;
+
+            GameObject intact = (GameObject)PrefabUtility.InstantiatePrefab(intactModel);
+            if (intact == null) intact = Object.Instantiate(intactModel);
+            intact.name = "Intact";
+            intact.transform.SetParent(pieceRoot.transform, false);
+            foreach (Renderer r in intact.GetComponentsInChildren<Renderer>(true))
             {
                 Material[] mats = r.sharedMaterials;
                 if (mats == null || mats.Length == 0) mats = new Material[] { target };
                 for (int i = 0; i < mats.Length; i++) mats[i] = target;
                 r.sharedMaterials = mats;
             }
-
-            Rigidbody rb = child.GetComponent<Rigidbody>();
-            if (rb == null) rb = child.AddComponent<Rigidbody>();
-            rb.mass = 2f;
-            rb.linearDamping = 0.05f;
-            rb.angularDamping = 0.05f;
-            rb.useGravity = true;
-            rb.isKinematic = false;
-            rb.interpolation = RigidbodyInterpolation.Interpolate;
-            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
-
-            foreach (MeshFilter mf in child.GetComponentsInChildren<MeshFilter>(true))
+            Rigidbody intactRb = intact.GetComponent<Rigidbody>();
+            if (intactRb == null) intactRb = intact.AddComponent<Rigidbody>();
+            intactRb.mass = 2f;
+            intactRb.linearDamping = 0.05f;
+            intactRb.angularDamping = 0.05f;
+            intactRb.useGravity = true;
+            intactRb.isKinematic = false;
+            intactRb.interpolation = RigidbodyInterpolation.Interpolate;
+            intactRb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+            foreach (MeshFilter mf in intact.GetComponentsInChildren<MeshFilter>(true))
             {
                 if (mf.sharedMesh == null) continue;
                 MeshCollider mc = mf.GetComponent<MeshCollider>();
@@ -586,6 +359,46 @@ public static class S4ExtractMaterialFixer_bd3cc5b3a3
                 mc.sharedMesh = mf.sharedMesh;
                 mc.convex = true;
             }
+
+            var brokenRoots = new System.Collections.Generic.List<GameObject>();
+            foreach (string brokenName in bs.brokenAssetNames)
+            {
+                GameObject brokenModel = FindModelAsset(brokenName);
+                if (brokenModel == null) continue;
+                GameObject broken = (GameObject)PrefabUtility.InstantiatePrefab(brokenModel);
+                if (broken == null) broken = Object.Instantiate(brokenModel);
+                broken.name = brokenName;
+                broken.transform.SetParent(pieceRoot.transform, false);
+                foreach (Renderer r in broken.GetComponentsInChildren<Renderer>(true))
+                {
+                    Material[] mats = r.sharedMaterials;
+                    if (mats == null || mats.Length == 0) mats = new Material[] { target };
+                    for (int i = 0; i < mats.Length; i++) mats[i] = target;
+                    r.sharedMaterials = mats;
+                }
+                Rigidbody rb = broken.GetComponent<Rigidbody>();
+                if (rb == null) rb = broken.AddComponent<Rigidbody>();
+                rb.mass = 1f;
+                rb.linearDamping = 0.05f;
+                rb.angularDamping = 0.05f;
+                rb.useGravity = true;
+                rb.isKinematic = false;
+                rb.interpolation = RigidbodyInterpolation.Interpolate;
+                rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+                foreach (MeshFilter mf in broken.GetComponentsInChildren<MeshFilter>(true))
+                {
+                    if (mf.sharedMesh == null) continue;
+                    MeshCollider mc = mf.GetComponent<MeshCollider>();
+                    if (mc == null) mc = mf.gameObject.AddComponent<MeshCollider>();
+                    mc.sharedMesh = mf.sharedMesh;
+                    mc.convex = true;
+                }
+                broken.SetActive(false);
+                brokenRoots.Add(broken);
+            }
+
+            breakable.intactRoot = intact;
+            breakable.brokenRoots = brokenRoots.ToArray();
             added++;
         }
 
