@@ -1,0 +1,20 @@
+﻿VRM: Assets/Raw/VRMHair/1.vrm
+Detected VRM version: VRM 0.x
+
+NODES / MESHES / MATERIALS:
+node[91] 'Face' mesh[0] 'Face (merged)(Clone).baked' skin=0
+  primitive[0] material[0] 'N00_000_00_FaceMouth_00_FACE_(Instance)'
+  primitive[1] material[1] 'N00_000_00_EyeIris_00_EYE_(Instance)'
+  primitive[2] material[2] 'N00_000_00_EyeHighlight_00_EYE_(Instance)'
+  primitive[3] material[3] 'N00_000_00_Face_00_SKIN_(Instance)'
+  primitive[4] material[4] 'N00_000_00_EyeWhite_00_EYE_(Instance)'
+  primitive[5] material[5] 'N00_000_00_FaceBrow_00_FACE_(Instance)'
+  primitive[6] material[6] 'N00_000_00_FaceEyeline_00_FACE_(Instance)'
+node[92] 'Body' mesh[1] 'Body (merged).baked' skin=1
+  primitive[0] material[7] 'N00_000_00_Body_00_SKIN_(Instance)'
+  primitive[1] material[8] 'N00_000_00_HairBack_00_HAIR_(Instance)'
+  primitive[2] material[9] 'N00_001_02_Bottoms_01_CLOTH_(Instance)'
+  primitive[3] material[10] 'N00_002_01_Tops_01_CLOTH_(Instance)'
+  primitive[4] material[11] 'N00_002_01_Shoes_01_CLOTH_(Instance)'
+node[93] 'Hair' mesh[2] 'Hair001 (merged).baked' skin=2
+  primitive[0] material[12] 'N00_000_Hair_00_HAIR_(Instance)'
