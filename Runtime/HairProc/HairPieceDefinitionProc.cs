@@ -5,7 +5,7 @@ using CharacterEditor.Hair;
 namespace CharacterEditor.Hair.Proc
 {
     [CreateAssetMenu(menuName = "Character/Hair Piece Procedural", fileName = "New_HairProc")]
-    public class HairPieceDefinitionProc : ScriptableObject
+    public partial class HairPieceDefinitionProc : ScriptableObject
     {
         [Header("Identity")]
         public string id;

@@ -2628,6 +2628,67 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 532603498}
   m_CullTransparentMesh: 1
+--- !u!1 &557508443
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 557508445}
+  - component: {fileID: 557508444}
+  m_Layer: 0
+  m_Name: Hair Preset UI
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &557508444
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 557508443}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc930bd1098263441bdc55ff80d038d3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterEditor.Hair.UI.CharacterHairPresetUi
+  catalog: {fileID: 11400000, guid: ba5f7f5b63c7d414f82fe714a75844c4, type: 2}
+  procAttacher: {fileID: 0}
+  procIntegration: {fileID: 0}
+  networkBridge: {fileID: 0}
+  canvas: {fileID: 0}
+  panelRoot: {fileID: 0}
+  presetButtonContainer: {fileID: 0}
+  presetButtonPrefab: {fileID: 0}
+  selectedPresetLabel: {fileID: 0}
+  buildUiAutomatically: 1
+  applyFirstPresetOnStart: 0
+  toggleKey: 104
+  font: {fileID: 0}
+  panelColor: {r: 0.06, g: 0.07, b: 0.09, a: 0.92}
+  buttonColor: {r: 0.18, g: 0.2, b: 0.24, a: 1}
+  selectedButtonColor: {r: 0.2, g: 0.48, b: 0.95, a: 1}
+  textColor: {r: 1, g: 1, b: 1, a: 1}
+--- !u!4 &557508445
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 557508443}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -1.02227, y: -0, z: -4.56717}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &559081472
 GameObject:
   m_ObjectHideFlags: 0
@@ -11497,3 +11558,4 @@ SceneRoots:
   - {fileID: 56663084}
   - {fileID: 2038805830}
   - {fileID: 1373583393}
+  - {fileID: 557508445}

@@ -30,9 +30,11 @@ namespace CharacterEditor.Hair.Proc
                 pointsLocal = new Vector3[]
                 {
                     Vector3.zero,
-                    new Vector3(0, length*0.33f, -0.02f),
-                    new Vector3(0, length*0.66f, -0.04f),
-                    new Vector3(0, length, -0.06f)
+                    // Hair grows away from the scalp and then falls down in head-local space.
+                    // Y is up on Unity humanoid/Mixamo heads, so length must be negative Y.
+                    new Vector3(0, -length*0.33f, -0.02f),
+                    new Vector3(0, -length*0.66f, -0.04f),
+                    new Vector3(0, -length, -0.06f)
                 },
                 thicknessRoot = 0.004f,
                 thicknessTip = 0.0008f,

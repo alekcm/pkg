@@ -116,10 +116,91 @@ namespace CharacterEditor.Hair.Proc
                 return h;
             }
         }
-        static ushort FloatToHalf(float f) => (ushort)Mathf.FloatToHalf(f);
-        static float HalfToFloat(ushort h) => Mathf.HalfToFloat(h);
+        static ushort FloatToHalf(float f)
+        {
+            uint x = (uint)BitConverter.SingleToInt32Bits(f);
+            uint sign = (x >> 16) & 0x8000u;
+            int exp = (int)((x >> 23) & 0xFFu) - 127 + 15;
+            uint mant = x & 0x7FFFFFu;
 
-        public bool Equals(HairDna other) => pieceHash == other.pieceHash && Mathf.Approximately(lengthScale, other.lengthScale);
+            if (exp <= 0)
+            {
+                if (exp < -10) return (ushort)sign;
+                mant = (mant | 0x800000u) >> (1 - exp);
+                return (ushort)(sign | ((mant + 0x1000u) >> 13));
+            }
+            if (exp >= 31)
+            {
+                return (ushort)(sign | 0x7C00u | (mant != 0 ? 1u : 0u));
+            }
+            return (ushort)(sign | ((uint)exp << 10) | ((mant + 0x1000u) >> 13));
+        }
+
+        static float HalfToFloat(ushort h)
+        {
+            uint sign = (uint)(h & 0x8000) << 16;
+            uint exp = (uint)(h & 0x7C00) >> 10;
+            uint mant = (uint)(h & 0x03FF);
+
+            uint bits;
+            if (exp == 0)
+            {
+                if (mant == 0) bits = sign;
+                else
+                {
+                    exp = 1;
+                    while ((mant & 0x0400u) == 0) { mant <<= 1; exp--; }
+                    mant &= 0x03FFu;
+                    bits = sign | ((exp + 127u - 15u) << 23) | (mant << 13);
+                }
+            }
+            else if (exp == 31)
+            {
+                bits = sign | 0x7F800000u | (mant << 13);
+            }
+            else
+            {
+                bits = sign | ((exp + 127u - 15u) << 23) | (mant << 13);
+            }
+            return BitConverter.Int32BitsToSingle((int)bits);
+        }
+
+        public bool Equals(HairDna other)
+        {
+            return pieceHash == other.pieceHash
+                && Mathf.Approximately(lengthScale, other.lengthScale)
+                && Mathf.Approximately(density, other.density)
+                && Mathf.Approximately(thickness, other.thickness)
+                && Mathf.Approximately(curl, other.curl)
+                && Mathf.Approximately(wave, other.wave)
+                && Mathf.Approximately(frizz, other.frizz)
+                && rootColor.Equals(other.rootColor)
+                && tipColor.Equals(other.tipColor)
+                && rootFade255 == other.rootFade255
+                && highlightColor.Equals(other.highlightColor)
+                && highlightStrength255 == other.highlightStrength255
+                && g0 == other.g0 && g1 == other.g1 && g2 == other.g2 && g3 == other.g3
+                && g4 == other.g4 && g5 == other.g5 && g6 == other.g6 && g7 == other.g7
+                && overrideCount == other.overrideCount
+                && OverrideEquals(o0, other.o0)
+                && OverrideEquals(o1, other.o1)
+                && OverrideEquals(o2, other.o2)
+                && OverrideEquals(o3, other.o3)
+                && OverrideEquals(o4, other.o4)
+                && OverrideEquals(o5, other.o5)
+                && OverrideEquals(o6, other.o6)
+                && OverrideEquals(o7, other.o7);
+        }
+
+        static bool OverrideEquals(GuideOverrideNet a, GuideOverrideNet b)
+        {
+            return a.guideIndex == b.guideIndex && a.len == b.len && a.curl == b.curl && a.thick == b.thick
+                && a.dx1 == b.dx1 && a.dy1 == b.dy1 && a.dz1 == b.dz1
+                && a.dx2 == b.dx2 && a.dy2 == b.dy2 && a.dz2 == b.dz2
+                && a.dx3 == b.dx3 && a.dy3 == b.dy3 && a.dz3 == b.dz3
+                && a.mask == b.mask;
+        }
+
         public override int GetHashCode() => (int)pieceHash;
     }
 
@@ -152,23 +233,32 @@ namespace CharacterEditor.Hair.Proc
         {
             var n = new GuideOverrideNet{ guideIndex=(byte)Mathf.Clamp(guideIdx,0,255) };
             n.len = (sbyte)Mathf.Clamp(Mathf.RoundToInt((o.lengthScale-1f)*100f), -50,50);
-            n.curl = (byte)0; n.thick = (sbyte)Mathf.Clamp(Mathf.RoundToInt((o.thicknessScale-1f)*100f),-50,50);
-            Vector3 q1 = o.GetPointDelta(2); // middle point
+            n.curl = (sbyte)Mathf.Clamp(Mathf.RoundToInt(o.curlStrength*100f), -100,100);
+            n.thick = (sbyte)Mathf.Clamp(Mathf.RoundToInt((o.thicknessScale-1f)*100f),-50,50);
+
+            // Convention: dx1/dy1/dz1 -> control point 1 (mask bit 1),
+            // dx2/dy2/dz2 -> point 2 (bit 2), dx3/dy3/dz3 -> point 3 (bit 4).
+            Vector3 q1 = o.GetPointDelta(1);
             n.dx1 = (sbyte)Mathf.Clamp(Mathf.RoundToInt(q1.x*100f), -127,127);
             n.dy1 = (sbyte)Mathf.Clamp(Mathf.RoundToInt(q1.y*100f), -127,127);
             n.dz1 = (sbyte)Mathf.Clamp(Mathf.RoundToInt(q1.z*100f), -127,127);
-            Vector3 q2 = o.GetPointDelta(3);
+            Vector3 q2 = o.GetPointDelta(2);
             n.dx2 = (sbyte)Mathf.Clamp(Mathf.RoundToInt(q2.x*100f), -127,127);
             n.dy2 = (sbyte)Mathf.Clamp(Mathf.RoundToInt(q2.y*100f), -127,127);
             n.dz2 = (sbyte)Mathf.Clamp(Mathf.RoundToInt(q2.z*100f), -127,127);
+            Vector3 q3 = o.GetPointDelta(3);
+            n.dx3 = (sbyte)Mathf.Clamp(Mathf.RoundToInt(q3.x*100f), -127,127);
+            n.dy3 = (sbyte)Mathf.Clamp(Mathf.RoundToInt(q3.y*100f), -127,127);
+            n.dz3 = (sbyte)Mathf.Clamp(Mathf.RoundToInt(q3.z*100f), -127,127);
             n.mask = o.mask;
             return n;
         }
         public GuideOverride ToGuideOverride()
         {
-            var o = new GuideOverride{ lengthScale = 1f + len/100f, thicknessScale=1f+thick/100f, curlStrength=curl/100f, mask=mask };
-            if ((mask & 4)!=0) o.SetPointDelta(2, new Vector3(dx1/100f, dy1/100f, dz1/100f));
-            if ((mask & 8)!=0) o.SetPointDelta(3, new Vector3(dx2/100f, dy2/100f, dz2/100f));
+            var o = new GuideOverride{ lengthScale = 1f + len/100f, thicknessScale=1f+thick/100f, curlStrength=curl/100f, mask=0 };
+            if ((mask & 1)!=0) o.SetPointDelta(1, new Vector3(dx1/100f, dy1/100f, dz1/100f));
+            if ((mask & 2)!=0) o.SetPointDelta(2, new Vector3(dx2/100f, dy2/100f, dz2/100f));
+            if ((mask & 4)!=0) o.SetPointDelta(3, new Vector3(dx3/100f, dy3/100f, dz3/100f));
             return o;
         }
     }

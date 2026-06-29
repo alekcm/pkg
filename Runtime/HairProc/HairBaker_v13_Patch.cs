@@ -118,7 +118,10 @@ namespace CharacterEditor.Hair.Proc
                         float3 left = verts[vL];
                         float3 right = verts[vR];
                         float3 center = (left + right) * 0.5f;
-                        float3 tangent = i < seg ? math.normalize(((Vector3)verts[vBase + (i+1)*2] + (Vector3)verts[vBase + (i+1)*2+1])*0.5f - center) : new float3(0,1,0);
+                        float3 nextCenter = i < seg
+                            ? (float3)(((Vector3)verts[vBase + (i + 1) * 2] + (Vector3)verts[vBase + (i + 1) * 2 + 1]) * 0.5f)
+                            : center + new float3(0, 1, 0);
+                        float3 tangent = math.normalize(nextCenter - center);
                         float3 bitan = math.normalize(right - left);
                         if (math.lengthsq(bitan) < 1e-6f) bitan = new float3(0.01f,0,0);
                         // sub-strand index: for 3-strand braid we need 3 virtual sub-strands per guide

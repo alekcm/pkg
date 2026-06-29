@@ -5,6 +5,7 @@
 using UnityEditor;
 using UnityEngine;
 using CharacterEditor.Hair.Proc;
+using CharacterEditor.Hair;
 
 namespace CharacterEditor.Hair.EditorTool
 {
@@ -49,9 +50,14 @@ namespace CharacterEditor.Hair.EditorTool
             so.ApplyModifiedProperties();
             EditorUtility.SetDirty(catalog);
 
+            // Generated guide roots are normalized to the top/crown scalp so hair grows
+            // from the head instead of from ears/sides. This preserves the old strand
+            // silhouettes while moving their roots to a believable scalp area.
+            int crownFixed = AllHairCrownRootsFixer.FixAllHairRootsToCrown(log: false);
+
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            EditorUtility.DisplayDialog("Hair Proc – Story Presets", $"Generated 6 story presets in:\n{root}\n\nCatalog updated: {catalogPath}\n\n• Diana – ear tuck pin\n• Grace Madison – flared side strands\n• Desmond Hall – dreads + ponytail bundle\n• Wenona – twin braids\n• Fuyuhiko – left shave mask\n• Ulysses – undercut both sides\n\nAttach via HairRuntimeAttacherProc / HairNetworkBridge.\n", "OK");
+            EditorUtility.DisplayDialog("Hair Proc – Story Presets", $"Generated 6 story presets in:\n{root}\n\nCatalog updated: {catalogPath}\nCrown roots fixed on {crownFixed} hair assets.\n\n• Diana – ear tuck pin\n• Grace Madison – flared side strands\n• Desmond Hall – dreads + ponytail bundle\n• Wenona – twin braids\n• Fuyuhiko – left shave mask\n• Ulysses – undercut both sides\n\nAttach via HairRuntimeAttacherProc / HairNetworkBridge.\n", "OK");
             EditorGUIUtility.PingObject(catalog);
         }
 
@@ -130,9 +136,9 @@ namespace CharacterEditor.Hair.EditorTool
             if (gl.pointsLocal.Length >= 4){
                 gl.pointsLocal = new Vector3[]{
                     Vector3.zero,
-                    new Vector3(-0.015f,0.14f,-0.03f),
-                    new Vector3(-0.035f,0.30f,-0.05f),
-                    new Vector3(-0.02f,0.52f,-0.02f)
+                    new Vector3(-0.015f,-0.14f,-0.03f),
+                    new Vector3(-0.035f,-0.30f,-0.05f),
+                    new Vector3(-0.02f,-0.52f,-0.02f)
                 };
             }
             guides.Add(gl);
@@ -170,21 +176,60 @@ namespace CharacterEditor.Hair.EditorTool
             var hp = NewBase("desmond_hall_dreads_proc", HairSlot.Back);
             var guides = new System.Collections.Generic.List<HairGuide>();
             var rnd = new System.Random(4419);
-            int dreadCount = 72;
+
+            // Crown/top-rooted dreads. Earlier versions scattered roots around the side
+            // of the head, so locks looked as if they started near the ears. These roots
+            // are deliberately constrained to the top/crown scalp; the guide then moves
+            // outward and down so the dread hangs around the head instead of growing from
+            // the side.
+            int dreadCount = 46;
+            float crownRadiusX = 0.052f;
+            float crownRadiusZ = 0.060f;
             for(int i=0;i<dreadCount;i++){
-                // distribute over scalp top/back
                 float u = (float)rnd.NextDouble();
                 float v = (float)rnd.NextDouble();
                 float th = u * Mathf.PI * 2f;
-                float r = Mathf.Sqrt(v) * 0.085f;
-                Vector3 rootPos = new Vector3(Mathf.Cos(th)*r, 0.08f + (1f-v)*0.07f, Mathf.Sin(th)*r*0.9f -0.015f);
-                var g = HairGuide.CreateDefault("c_head", rootPos, 0.34f);
-                g.thicknessRoot = 0.009f; g.thicknessTip = 0.0075f; g.sideCount = 6;
+                float rr = Mathf.Sqrt(v);
+
+                float x = Mathf.Cos(th) * crownRadiusX * rr;
+                float z = Mathf.Sin(th) * crownRadiusZ * rr - 0.010f; // slight bias to back/crown
+                float crownFalloff = rr * rr;
+                float y = 0.145f - crownFalloff * 0.020f + (float)(rnd.NextDouble()-0.5f) * 0.008f;
+                Vector3 rootPos = new Vector3(x, y, z);
+
+                var g = HairGuide.CreateDefault("c_head", rootPos, 0.38f);
+                g.thicknessRoot = 0.014f; g.thicknessTip = 0.010f; g.sideCount = 6;
                 g.groupId = 3;
-                // dread – slight kinks
+
+                // Direction from the crown to the outside of the scalp. If the root is
+                // very close to center, send it backward so it still exits the skull.
+                Vector3 radial = new Vector3(rootPos.x / crownRadiusX, 0f, (rootPos.z + 0.010f) / crownRadiusZ);
+                if (radial.sqrMagnitude < 0.08f)
+                    radial = Vector3.back;
+                radial.Normalize();
+
+                // Back dreads should go more backward; side dreads should go sideways;
+                // front roots are gently redirected to sides so they do not cover the face.
+                Vector3 sideBias = new Vector3(Mathf.Sign(rootPos.x) * 0.018f, 0f, 0f);
+                if (Mathf.Abs(rootPos.x) < 0.012f) sideBias = Vector3.zero;
+                Vector3 backBias = Vector3.back * Mathf.Lerp(0.015f, 0.070f, Mathf.InverseLerp(0.04f, -0.06f, rootPos.z));
+                Vector3 faceAvoid = rootPos.z > 0.020f ? Vector3.back * 0.050f : Vector3.zero;
+
+                float sideJitter = ((float)rnd.NextDouble() - 0.5f) * 0.010f;
+                Vector3 jitter = new Vector3(sideJitter, 0f, ((float)rnd.NextDouble() - 0.5f) * 0.008f);
+
+                g.pointsLocal = new Vector3[]
+                {
+                    Vector3.zero,
+                    radial * 0.030f + sideBias * 0.5f + backBias * 0.3f + faceAvoid * 0.4f + Vector3.down * 0.055f + jitter * 0.3f,
+                    radial * 0.060f + sideBias       + backBias * 0.8f + faceAvoid * 0.8f + Vector3.down * 0.190f + jitter * 0.7f,
+                    radial * 0.075f + sideBias * 1.4f + backBias       + faceAvoid       + Vector3.down * 0.400f + jitter
+                };
+
+                // dread – slight organic kinks, but keep root/crown placement stable
                 for(int p=1;p<g.pointsLocal.Length;p++){
-                    g.pointsLocal[p].x += ((float)rnd.NextDouble()-0.5f)*0.006f;
-                    g.pointsLocal[p].z += ((float)rnd.NextDouble()-0.5f)*0.006f;
+                    g.pointsLocal[p].x += ((float)rnd.NextDouble()-0.5f)*0.005f;
+                    g.pointsLocal[p].z += ((float)rnd.NextDouble()-0.5f)*0.005f;
                 }
                 guides.Add(g);
             }

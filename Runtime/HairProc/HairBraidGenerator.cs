@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace CharacterEditor.Hair.Proc
 {
-    public enum BraidType : byte { None=0, ThreeStrand=1, TwoStrandTwist=2, Fishtail=3, Dread=4 }
+    public enum BraidType : byte { None=0, ThreeStrand=1, TwoStrandTwist=2, Fishtail=3, Dread=4, Dreadlock=4 }
 
     [System.Serializable]
     public struct BraidProfile

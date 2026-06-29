@@ -23,6 +23,20 @@ namespace CharacterEditor.Hair.Proc
         // Fuyuhiko: assign asset with useProceduralSideShave=true, leftShaveX=-0.045
         // Улисс: leftShaveX=-0.055, rightShaveX=0.055, shaveBackLower=true
 
+        [Header("v1.3 – Head collision / wrap mask")]
+        public HeadCollisionMaskDefinition headCollisionMask;
+
+        [Header("v1.5 – Scalp growth profile")]
+        public ScalpProfileDefinition scalpProfile;
+
+        [Header("v1.4 – Strand self separation")]
+        [Tooltip("Approximate collision between procedural locks. This keeps neighboring tubes from sharing the same centerline.")]
+        public bool enableStrandSeparation = true;
+        [Tooltip("Minimum centerline distance between locks in meters. Increase if locks still intersect; decrease if hair explodes outward.")]
+        [Range(0.004f, 0.06f)] public float strandSeparationRadius = 0.024f;
+        [Tooltip("How strongly a lock is pushed away from nearby locks. 0 disables, 1 is strong.")]
+        [Range(0f, 1f)] public float strandSeparationStrength = 0.55f;
+
         [Header("v1.3 – Bundle / Ponytail anchors")]
         public BundleAnchor[] bundleAnchors;
     }
@@ -37,6 +51,21 @@ namespace CharacterEditor.Hair.Proc
         [Tooltip("At what normalized strand length (0..1) do strands snap to this anchor – mid-strand pin")]
         [Range(0f,1f)] public float pinT; // Diana ear tuck = 0.42, hairpin mid = 0.55
         [Range(0f,1f)] public float tailSlack; // how much length remains swinging after pin – Diana 0.45
+
+        // Backward-compatible alias: older comments/code used localPos.
+        public Vector3 localPos { get => localOffset; set => localOffset = value; }
+    }
+
+    [System.Serializable]
+    public struct PinConstraint
+    {
+        public int guideIndex;
+        public uint targetBoneHash;
+        public byte t255;
+        public sbyte offsetX_cm;
+        public sbyte offsetY_cm;
+        public sbyte offsetZ_cm;
+        public byte tailSlack255;
     }
 
     // ---------- DNA v1.3 extension ----------

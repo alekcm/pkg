@@ -140,6 +140,7 @@ namespace CharacterEditor.Hair.EditorTool
 
             // compute delta vs guide mid-point
             var g = currentPiece.guides[guideIdx];
+            if (g.pointsLocal == null || g.pointsLocal.Length == 0) return;
             Vector3 midLocal = g.pointsLocal.Length > 2 ? g.pointsLocal[2] : g.pointsLocal[g.pointsLocal.Length - 1] * 0.5f;
             Vector3 targetLocal = worldTargetLocalToHead - g.rootLocalPos;
             Vector3 delta = (targetLocal - midLocal) * dragStrength;
@@ -152,7 +153,7 @@ namespace CharacterEditor.Hair.EditorTool
             {
                 guideIndex = (byte)guideIdx,
                 dx2 = dx, dy2 = dy, dz2 = dz,
-                mask = 4, // point 2
+                mask = 2, // control point 2 (dx2/dy2/dz2)
                 len = 0, curl = 0, thick = 0
             };
             switch (slot)

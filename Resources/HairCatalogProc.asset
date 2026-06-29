@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a40cd4b2a169cde4cb90ccf346e46e93, type: 3}
+  m_Name: HairCatalogProc
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterEditor.Hair.Proc.HairCatalogProc
+  pieces:
+  - {fileID: 11400000, guid: 4b5a5a564db5c85459f1b09d5b7ee578, type: 2}
+  - {fileID: 11400000, guid: 0582637e0d8e1354ebe3ac5a893ecf98, type: 2}
+  - {fileID: 11400000, guid: 4d2ce29966068cb409f2876925747a73, type: 2}
+  - {fileID: 11400000, guid: cebca0e4c9923ff43b3a16fdf91b4314, type: 2}
+  - {fileID: 11400000, guid: e737e41e06458fb4dbfa5bd94f341ff0, type: 2}
+  - {fileID: 11400000, guid: 0f4e4634708ff5742bcca462de27f3ed, type: 2}

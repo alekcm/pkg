@@ -25,6 +25,12 @@ namespace CharacterEditor.Hair.Proc
         public Material overrideMaterial; // if null → piece.hairMaterial → HDRP/Hair
         public bool castShadows = true;
 
+        [Header("Scale Fix")]
+        [Tooltip("Enable this if your imported Mixamo/FBX armature has scale 100/100/100. The generated hair is authored in meters, so it must be compensated before being parented/skinned to a scaled head bone.")]
+        public bool compensateScaledAvatar = true;
+        [Tooltip("Only compensate if the parent/head lossy scale differs from 1 by more than this value.")]
+        public float scaleCompensationThreshold = 0.01f;
+
         private readonly Dictionary<string, SkinnedMeshRenderer> _activeSmr = new Dictionary<string, SkinnedMeshRenderer>();
         private readonly Dictionary<string, GameObject> _activeGO = new Dictionary<string, GameObject>();
 
@@ -75,6 +81,9 @@ namespace CharacterEditor.Hair.Proc
             holder.transform.localScale = Vector3.one;
             holder.layer = gameObject.layer;
 
+            if (compensateScaledAvatar)
+                ApplyScaledAvatarCompensation(result.mesh, parent);
+
             var smr = holder.AddComponent<SkinnedMeshRenderer>();
             smr.sharedMesh = result.mesh;
             smr.updateWhenOffscreen = true;
@@ -90,13 +99,28 @@ namespace CharacterEditor.Hair.Proc
             Transform bindBone = headBone != null ? headBone : parent;
             smr.rootBone = bindBone;
             smr.bones = new Transform[] { bindBone };
-            // rebuild bindpose to head
+            // rebuild bindpose to head and bind every generated vertex to that single bone.
+            // Without bone weights Unity's SkinnedMeshRenderer can render the generated mesh
+            // collapsed/culled or not render it at all on some Unity 6 pipelines.
             var bindposes = new Matrix4x4[1];
             bindposes[0] = bindBone.worldToLocalMatrix * smr.transform.localToWorldMatrix;
             result.mesh.bindposes = bindposes;
+            int vertexCount = result.mesh.vertexCount;
+            var weights = new BoneWeight[vertexCount];
+            for (int i = 0; i < vertexCount; i++)
+            {
+                weights[i] = new BoneWeight { boneIndex0 = 0, weight0 = 1f };
+            }
+            result.mesh.boneWeights = weights;
 
-            // bounds – stable large box to avoid Unity6 culling flicker
-            smr.localBounds = new Bounds(new Vector3(0, 0.08f, 0), new Vector3(0.5f, 0.5f, 0.5f));
+            // bounds – stable box to avoid Unity6 culling flicker.
+            // If the avatar is scaled (Mixamo often imports Armature at 100), bounds must be
+            // in the renderer's compensated local space too.
+            Vector3 boundsScale = compensateScaledAvatar ? GetScaleCompensation(parent) : Vector3.one;
+            smr.localBounds = new Bounds(
+                Vector3.Scale(new Vector3(0, 0.08f, 0), boundsScale),
+                Vector3.Scale(new Vector3(0.5f, 0.5f, 0.5f), Abs(boundsScale))
+            );
 
             // material – HDRP Hair
             Material mat = overrideMaterial != null ? overrideMaterial : piece.hairMaterial;
@@ -123,6 +147,52 @@ namespace CharacterEditor.Hair.Proc
             _activeGO[slotKey] = holder;
 
             return smr;
+        }
+
+        void ApplyScaledAvatarCompensation(Mesh mesh, Transform parent)
+        {
+            if (mesh == null || parent == null)
+                return;
+
+            Vector3 compensation = GetScaleCompensation(parent);
+            if (ApproximatelyOne(compensation))
+                return;
+
+            Vector3[] verts = mesh.vertices;
+            for (int i = 0; i < verts.Length; i++)
+                verts[i] = Vector3.Scale(verts[i], compensation);
+
+            mesh.vertices = verts;
+            mesh.RecalculateBounds();
+            mesh.RecalculateTangents();
+        }
+
+        Vector3 GetScaleCompensation(Transform parent)
+        {
+            if (parent == null)
+                return Vector3.one;
+
+            Vector3 s = parent.lossyScale;
+            return new Vector3(
+                NeedsScaleCompensation(s.x) ? 1f / s.x : 1f,
+                NeedsScaleCompensation(s.y) ? 1f / s.y : 1f,
+                NeedsScaleCompensation(s.z) ? 1f / s.z : 1f
+            );
+        }
+
+        bool NeedsScaleCompensation(float scale)
+        {
+            return Mathf.Abs(scale) > 0.0001f && Mathf.Abs(scale - 1f) > scaleCompensationThreshold;
+        }
+
+        static bool ApproximatelyOne(Vector3 v)
+        {
+            return Mathf.Approximately(v.x, 1f) && Mathf.Approximately(v.y, 1f) && Mathf.Approximately(v.z, 1f);
+        }
+
+        static Vector3 Abs(Vector3 v)
+        {
+            return new Vector3(Mathf.Abs(v.x), Mathf.Abs(v.y), Mathf.Abs(v.z));
         }
 
         public void ClearSlot(string slot)
