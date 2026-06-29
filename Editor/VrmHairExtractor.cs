@@ -226,6 +226,10 @@ namespace CharacterEditor.Hair.EditorImport
             }
             else if (bones.Length > 0) smr.rootBone = bones[0];
 
+            // --- VRM IMPORT (Editor): DO NOT Instantiate mesh here! ---
+            // This runs during AssetDatabase import, modifying the asset mesh directly IS ALLOWED and REQUIRED,
+            // otherwise the prefab loses its Mesh reference (Mesh=None bug).
+            // Runtime cloning is handled in HairRuntimeAttacher.
             if (skin.Has("inverseBindMatrices"))
             {
                 var bindposes = reader.ReadMat4(skin["inverseBindMatrices"].I);
@@ -234,7 +238,43 @@ namespace CharacterEditor.Hair.EditorImport
                     for (int i = 0; i < bindposes.Length; i++)
                         bindposes[i] = ConvertMatrixFlipX(bindposes[i]);
                 }
-                smr.sharedMesh.bindposes = bindposes;
+                if (smr.sharedMesh != null)
+                {
+                    // Editor import: write directly into the asset mesh – this is correct.
+                    smr.sharedMesh.bindposes = bindposes;
+                    smr.sharedMesh.RecalculateBounds();
+                    // Mark mesh dirty so AssetDatabase saves the bindpose change
+                    EditorUtility.SetDirty(smr.sharedMesh);
+                }
+            }
+
+            // --- UNITY 6 BOUNDS / ROOT BONE SAFETY (Editor import) ---
+            if (smr.rootBone != null && bones != null)
+            {
+                bool found = false;
+                foreach (var b in bones) if (b == smr.rootBone) { found = true; break; }
+                if (!found && bones.Length > 0) smr.rootBone = bones[0];
+            }
+            if (smr.sharedMesh != null)
+            {
+                smr.sharedMesh.RecalculateBounds();
+                smr.localBounds = smr.sharedMesh.bounds;
+            }
+            smr.updateWhenOffscreen = true;
+            smr.quality = SkinQuality.Bone4;
+            smr.skinnedMotionVectors = true;
+            smr.allowOcclusionWhenDynamic = false;
+            smr.forceMatrixRecalculationPerRender = true;
+
+            // Save the mesh asset again after bindpose edit, so prefab reference stays valid
+            if (smr.sharedMesh != null)
+            {
+                string meshPath = AssetDatabase.GetAssetPath(smr.sharedMesh);
+                if (!string.IsNullOrEmpty(meshPath))
+                {
+                    EditorUtility.SetDirty(smr.sharedMesh);
+                    AssetDatabase.SaveAssetIfDirty(smr.sharedMesh);
+                }
             }
         }
 

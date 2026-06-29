@@ -15,7 +15,7 @@ MonoBehaviour:
   id: 1
   displayName: 1
   slot: 0
-  prefab: {fileID: 1616410005986507119, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
+  prefab: {fileID: 2760125851276343740, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
   thumbnail: {fileID: 0}
   materials:
   - {fileID: 2100000, guid: 46cfc14d459a69344af660e45977ede9, type: 2}

@@ -1713,6 +1713,13 @@ MonoBehaviour:
   alignClothingRootToCharacterInDirectSMR: 1
   alignClothingRootRotationToCharacterInDirectSMR: 0
   rebuildBindposesForDirectSMR: 1
+  forceRecalculateBounds: 1
+  forceUpdateWhenOffscreen: 1
+  useLargeStableBounds: 1
+  stableBoundsCenter: {x: 0, y: 0.9, z: 0}
+  stableBoundsExtents: {x: 0.8, y: 1.2, z: 0.8}
+  validateRootBone: 1
+  autoFindHipsRoot: 1
   optimizeFarPhysics: 1
   farDistanceThreshold: 15
 --- !u!1 &402936788
@@ -5242,6 +5249,68 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &1373583393
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 591416525613040321, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -2.0234456
+      objectReference: {fileID: 0}
+    - target: {fileID: 591416525613040321, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.00000013081493
+      objectReference: {fileID: 0}
+    - target: {fileID: 591416525613040321, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -1.715642
+      objectReference: {fileID: 0}
+    - target: {fileID: 591416525613040321, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 591416525613040321, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 591416525613040321, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 591416525613040321, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 591416525613040321, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 591416525613040321, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 591416525613040321, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2760125851276343740, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
+      propertyPath: m_Name
+      value: 1 (1)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
+--- !u!4 &1373583394 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 591416525613040321, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
+  m_PrefabInstance: {fileID: 1373583393}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1385590750
 GameObject:
   m_ObjectHideFlags: 0
@@ -10384,9 +10453,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 7f9cd558bd780d64aa0cfb8251e5db2b, type: 3}
       insertIndex: -1
       addedObject: {fileID: 726188865}
-    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 7f9cd558bd780d64aa0cfb8251e5db2b, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 2078539684}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7f9cd558bd780d64aa0cfb8251e5db2b, type: 3}
       insertIndex: -1
@@ -10427,10 +10493,17 @@ MonoBehaviour:
   clothingRoots:
   - {fileID: 883166482}
   - {fileID: 726188865}
-  - {fileID: 2078539684}
+  - {fileID: 1373583394}
   alignClothingRootToCharacterInDirectSMR: 1
   alignClothingRootRotationToCharacterInDirectSMR: 0
   rebuildBindposesForDirectSMR: 1
+  forceRecalculateBounds: 1
+  forceUpdateWhenOffscreen: 1
+  useLargeStableBounds: 1
+  stableBoundsCenter: {x: 0, y: 0.9, z: 0}
+  stableBoundsExtents: {x: 0.8, y: 1.2, z: 0.8}
+  validateRootBone: 1
+  autoFindHipsRoot: 1
   optimizeFarPhysics: 1
   farDistanceThreshold: 15
 --- !u!114 &2038805836
@@ -10442,104 +10515,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 2038805831}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e31925471785f374c8ef6589d5000ad9, type: 3}
+  m_Script: {fileID: 11500000, guid: 9d161fa00c0c7a444880d2a2163584b5, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CharacterEditor.Hair.RuntimeWardrobeBounds
-  characterRoot: {fileID: 0}
-  hips: {fileID: 0}
-  head: {fileID: 0}
-  postEquipFrames: 3
-  updateWhenOffscreen: 0
---- !u!1001 &2078539683
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 2038805833}
-    m_Modifications:
-    - target: {fileID: 294537197915494520, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
-      propertyPath: m_DirtyAABB
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 294537197915494520, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
-      propertyPath: m_AABB.m_Center.x
-      value: 0.0000030696392
-      objectReference: {fileID: 0}
-    - target: {fileID: 294537197915494520, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
-      propertyPath: m_AABB.m_Center.y
-      value: 1.520715
-      objectReference: {fileID: 0}
-    - target: {fileID: 294537197915494520, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
-      propertyPath: m_AABB.m_Center.z
-      value: -0.060485415
-      objectReference: {fileID: 0}
-    - target: {fileID: 294537197915494520, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
-      propertyPath: m_AABB.m_Extent.x
-      value: 0.09813159
-      objectReference: {fileID: 0}
-    - target: {fileID: 294537197915494520, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
-      propertyPath: m_AABB.m_Extent.y
-      value: 0.0980382
-      objectReference: {fileID: 0}
-    - target: {fileID: 294537197915494520, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
-      propertyPath: m_AABB.m_Extent.z
-      value: 0.04626807
-      objectReference: {fileID: 0}
-    - target: {fileID: 1616410005986507119, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
-      propertyPath: m_Name
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2078793324944943709, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0.6877732
-      objectReference: {fileID: 0}
-    - target: {fileID: 2078793324944943709, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2078793324944943709, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0.98310506
-      objectReference: {fileID: 0}
-    - target: {fileID: 2078793324944943709, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2078793324944943709, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2078793324944943709, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2078793324944943709, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2078793324944943709, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2078793324944943709, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2078793324944943709, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
---- !u!4 &2078539684 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2078793324944943709, guid: 6dc214e08f192204da5d48d10e22e36c, type: 3}
-  m_PrefabInstance: {fileID: 2078539683}
-  m_PrefabAsset: {fileID: 0}
+  m_EditorClassIdentifier: Assembly-CSharp::SkinnedMeshBoundsStabilizer
+  updateWhenOffscreen: 1
+  useManualBounds: 1
+  manualCenter: {x: 0, y: 0.9, z: 0}
+  manualExtents: {x: 0.6, y: 1, z: 0.4}
+  detectHairByName: 1
+  hairCenter: {x: 0, y: 1.55, z: 0}
+  hairExtents: {x: 0.25, y: 0.25, z: 0.25}
+  recalculateEveryFrame: 0
+  logFixedRenderers: 0
 --- !u!1 &2083587358
 GameObject:
   m_ObjectHideFlags: 0
@@ -11509,3 +11496,4 @@ SceneRoots:
   - {fileID: 121653966}
   - {fileID: 56663084}
   - {fileID: 2038805830}
+  - {fileID: 1373583393}
