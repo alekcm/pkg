@@ -38,9 +38,9 @@ namespace CharacterEditor.Hair.Proc
             int seg = lod switch { 1 => def.segmentsLOD1, 2 => def.segmentsLOD2, _ => def.segmentsLOD0 };
             seg = math.clamp(seg, 4, MAX_SEG);
 
-            // Build real tube-like locks, not just guide/ribbon lines.
-            // 6 sides gives visible VRoid-like strands/dreads without too many vertices.
-            int radial = 6;
+            // Build real lock meshes, not just guide/ribbon lines.
+            // Per-piece cross-section lets us support both round dreads and flat anime clumps.
+            int radial = Mathf.Clamp(def.strandSides <= 0 ? 6 : def.strandSides, 3, 10);
             int vertsPerStrand = (seg + 1) * radial;
             int trisPerStrand = seg * radial * 2;
             int totalVerts = useGuides * vertsPerStrand;
@@ -147,7 +147,9 @@ namespace CharacterEditor.Hair.Proc
                 headMaskAffectUntilT = hasHeadMask ? headMask.affectUntilT : 0f,
                 enableStrandSeparation = enableStrandSeparation ? 1 : 0,
                 strandSeparationRadius = strandSeparationRadius,
-                strandSeparationStrength = strandSeparationStrength
+                strandSeparationStrength = strandSeparationStrength,
+                strandWidthScale = Mathf.Max(0.05f, def.strandWidthScale),
+                strandDepthScale = Mathf.Max(0.05f, def.strandDepthScale)
             };
 
             var handle = job.Schedule(useGuides, 4);
@@ -242,6 +244,8 @@ namespace CharacterEditor.Hair.Proc
             public int enableStrandSeparation;
             public float strandSeparationRadius;
             public float strandSeparationStrength;
+            public float strandWidthScale;
+            public float strandDepthScale;
 
             // Each parallel job processes one guide/strand, but one strand owns a whole
             // contiguous vertex range: guideIdx * ((segments + 1) * 2) ...
@@ -340,9 +344,10 @@ namespace CharacterEditor.Hair.Proc
                     for (int side = 0; side < sides; side++)
                     {
                         float a = (side / (float)sides) * math.PI * 2f;
-                        float3 n = math.normalize(right * math.cos(a) + up * math.sin(a));
+                        float3 offset = right * (math.cos(a) * th * strandWidthScale) + up * (math.sin(a) * th * strandDepthScale);
+                        float3 n = math.normalize(offset);
                         int v = ringBase + side;
-                        positions[v] = pos + n * th;
+                        positions[v] = pos + offset;
                         normals[v] = n;
                         uvs[v] = new float2(side / (float)sides, t);
                         colors32[v] = c32;

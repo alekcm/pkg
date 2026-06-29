@@ -1,0 +1,759 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1cfb5281fff25c41841ca2882553025, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterEditor.Hair.Proc.HairPieceDefinitionProc
+  id: cassidy_amber_hair
+  displayName: Cassidy Amber - layered red waves
+  slot: 4
+  guides:
+  - attachBone: c_head
+    rootLocalPos: {x: -0.046877902, y: 0.12396351, z: 0.06947512}
+    rootLocalNormal: {x: -0.51923317, y: 0.3717875, z: 0.7695265}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.0047999998, y: -0.0434, z: 0.026}
+    - {x: -0.014399999, y: -0.0961, z: 0.038}
+    - {x: -0.022399997, y: -0.155, z: 0.032}
+    thicknessRoot: 0.0048
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 0
+  - attachBone: c_head
+    rootLocalPos: {x: -0.0410822, y: 0.12624094, z: 0.07195575}
+    rootLocalNormal: {x: -0.45721126, y: 0.38686365, z: 0.80080855}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.0038769231, y: -0.041246153, z: 0.026}
+    - {x: -0.011630769, y: -0.091330774, z: 0.038}
+    - {x: -0.018092306, y: -0.1473077, z: 0.032}
+    thicknessRoot: 0.0048
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 0
+  - attachBone: c_head
+    rootLocalPos: {x: -0.034679487, y: 0.12833688, z: 0.074239425}
+    rootLocalNormal: {x: -0.3877242, y: 0.40093467, z: 0.83001286}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.0029538462, y: -0.03909231, z: 0.026}
+    - {x: -0.008861538, y: -0.08656154, z: 0.038}
+    - {x: -0.013784615, y: -0.13961539, z: 0.032}
+    thicknessRoot: 0.0048
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 0
+  - attachBone: c_head
+    rootLocalPos: {x: -0.027696833, y: 0.13016495, z: 0.076231875}
+    rootLocalNormal: {x: -0.31094226, y: 0.41336924, z: 0.85582757}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.0020307694, y: -0.036938462, z: 0.026}
+    - {x: -0.0060923076, y: -0.08179231, z: 0.038}
+    - {x: -0.009476923, y: -0.13192308, z: 0.032}
+    thicknessRoot: 0.0048
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 0
+  - attachBone: c_head
+    rootLocalPos: {x: -0.020199822, y: 0.13163662, z: 0.077836275}
+    rootLocalNormal: {x: -0.2275579, y: 0.4234944, z: 0.8768523}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.0011076921, y: -0.034784615, z: 0.026}
+    - {x: -0.0033230763, y: -0.077023074, z: 0.038}
+    - {x: -0.0051692296, y: -0.124230765, z: 0.032}
+    thicknessRoot: 0.0048
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 0
+  - attachBone: c_head
+    rootLocalPos: {x: -0.012295489, y: 0.13267082, z: 0.078964}
+    rootLocalNormal: {x: -0.13885629, y: 0.4306734, z: 0.8917619}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.00018461529, y: -0.032630768, z: 0.026}
+    - {x: -0.00055384584, y: -0.072253846, z: 0.038}
+    - {x: -0.00086153793, y: -0.11653846, z: 0.032}
+    thicknessRoot: 0.0048
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 0
+  - attachBone: c_head
+    rootLocalPos: {x: -0.004128734, y: 0.13320501, z: 0.07954658}
+    rootLocalNormal: {x: -0.04668748, y: 0.43440273, z: 0.899508}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.0007384616, y: -0.030476922, z: 0.026}
+    - {x: 0.0022153847, y: -0.06748462, z: 0.038}
+    - {x: 0.003446154, y: -0.10884615, z: 0.032}
+    thicknessRoot: 0.0048
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 0
+  - attachBone: c_head
+    rootLocalPos: {x: 0.0041287383, y: 0.13320501, z: 0.07954658}
+    rootLocalNormal: {x: 0.04668753, y: 0.43440273, z: 0.899508}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.0016615388, y: -0.030476922, z: 0.026}
+    - {x: 0.0049846163, y: -0.06748462, z: 0.038}
+    - {x: 0.0077538476, y: -0.10884615, z: 0.032}
+    thicknessRoot: 0.0048
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 0
+  - attachBone: c_head
+    rootLocalPos: {x: 0.012295492, y: 0.13267082, z: 0.078964}
+    rootLocalNormal: {x: 0.13885632, y: 0.4306734, z: 0.8917619}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.0025846157, y: -0.03263077, z: 0.026}
+    - {x: 0.007753847, y: -0.072253846, z: 0.038}
+    - {x: 0.01206154, y: -0.116538465, z: 0.032}
+    thicknessRoot: 0.0048
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 0
+  - attachBone: c_head
+    rootLocalPos: {x: 0.020199822, y: 0.1316366, z: 0.077836275}
+    rootLocalNormal: {x: 0.2275579, y: 0.4234943, z: 0.8768523}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.0035076926, y: -0.034784615, z: 0.026}
+    - {x: 0.010523077, y: -0.07702308, z: 0.038}
+    - {x: 0.016369231, y: -0.12423077, z: 0.032}
+    thicknessRoot: 0.0048
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 0
+  - attachBone: c_head
+    rootLocalPos: {x: 0.027696833, y: 0.13016495, z: 0.076231875}
+    rootLocalNormal: {x: 0.31094226, y: 0.41336924, z: 0.85582757}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.0044307695, y: -0.036938462, z: 0.026}
+    - {x: 0.013292308, y: -0.08179231, z: 0.038}
+    - {x: 0.020676924, y: -0.13192308, z: 0.032}
+    thicknessRoot: 0.0048
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 0
+  - attachBone: c_head
+    rootLocalPos: {x: 0.034679487, y: 0.12833688, z: 0.074239425}
+    rootLocalNormal: {x: 0.3877242, y: 0.40093467, z: 0.83001286}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.0053538466, y: -0.03909231, z: 0.026}
+    - {x: 0.016061539, y: -0.08656154, z: 0.038}
+    - {x: 0.024984615, y: -0.13961539, z: 0.032}
+    thicknessRoot: 0.0048
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 0
+  - attachBone: c_head
+    rootLocalPos: {x: 0.0410822, y: 0.12624094, z: 0.07195575}
+    rootLocalNormal: {x: 0.45721126, y: 0.38686365, z: 0.80080855}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.006276923, y: -0.041246153, z: 0.026}
+    - {x: 0.018830769, y: -0.091330774, z: 0.038}
+    - {x: 0.029292306, y: -0.1473077, z: 0.032}
+    thicknessRoot: 0.0048
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 0
+  - attachBone: c_head
+    rootLocalPos: {x: 0.046877902, y: 0.12396351, z: 0.06947512}
+    rootLocalNormal: {x: 0.51923317, y: 0.3717875, z: 0.7695265}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.0072000003, y: -0.0434, z: 0.026}
+    - {x: 0.021599999, y: -0.0961, z: 0.038}
+    - {x: 0.0336, y: -0.155, z: 0.032}
+    thicknessRoot: 0.0048
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 0
+  - attachBone: c_head
+    rootLocalPos: {x: -0.089273274, y: 0.10793917, z: -0.003939157}
+    rootLocalNormal: {x: -0.9616465, y: 0.2709897, z: -0.042432368}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.018, y: -0.085200004, z: 0.002}
+    - {x: -0.036, y: -0.2059, z: -0.01}
+    - {x: -0.055, y: -0.35500002, z: -0.025}
+    thicknessRoot: 0.0055
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 1
+  - attachBone: c_head
+    rootLocalPos: {x: -0.089405976, y: 0.10326498, z: -0.014838211}
+    rootLocalNormal: {x: -0.9569348, y: 0.24300799, z: -0.15881713}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.018, y: -0.0888, z: 0.002}
+    - {x: -0.055833295, y: -0.2146, z: -0.01}
+    - {x: -0.04508335, y: -0.37, z: -0.025}
+    thicknessRoot: 0.0055
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 1
+  - attachBone: c_head
+    rootLocalPos: {x: -0.08682428, y: 0.11520599, z: 0.0067223515}
+    rootLocalNormal: {x: -0.9460402, y: 0.31566238, z: 0.07324696}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.018, y: -0.0924, z: 0.002}
+    - {x: -0.030889174, y: -0.22330001, z: -0.01}
+    - {x: -0.05755541, y: -0.38500002, z: -0.025}
+    thicknessRoot: 0.0055
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 1
+  - attachBone: c_head
+    rootLocalPos: {x: -0.0884375, y: 0.10206655, z: -0.021146763}
+    rootLocalNormal: {x: -0.9451293, y: 0.23591733, z: -0.2259949}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.018, y: -0.096, z: 0.002}
+    - {x: -0.01748371, y: -0.232, z: -0.01}
+    - {x: -0.06425814, y: -0.4, z: -0.025}
+    thicknessRoot: 0.0055
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 1
+  - attachBone: c_head
+    rootLocalPos: {x: -0.08701955, y: 0.115361646, z: 0.001421414}
+    rootLocalNormal: {x: -0.94842035, y: 0.3166367, z: 0.015491898}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.018, y: -0.08232, z: 0.002}
+    - {x: -0.04588227, y: -0.19894, z: -0.01}
+    - {x: -0.050058864, y: -0.343, z: -0.025}
+    thicknessRoot: 0.0055
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 1
+  - attachBone: c_head
+    rootLocalPos: {x: -0.087855004, y: 0.11093446, z: -0.010395592}
+    rootLocalNormal: {x: -0.9506314, y: 0.28921816, z: -0.11248506}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.018, y: -0.08592, z: 0.002}
+    - {x: -0.05196974, y: -0.20764, z: -0.01}
+    - {x: -0.04701513, y: -0.358, z: -0.025}
+    thicknessRoot: 0.0055
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 1
+  - attachBone: c_head
+    rootLocalPos: {x: -0.08328721, y: 0.122745514, z: 0.013049646}
+    rootLocalNormal: {x: -0.9202454, y: 0.36381137, z: 0.14418633}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.018, y: -0.08952, z: 0.002}
+    - {x: -0.022002494, y: -0.21633999, z: -0.01}
+    - {x: -0.06199875, y: -0.373, z: -0.025}
+    thicknessRoot: 0.0055
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 1
+  - attachBone: c_head
+    rootLocalPos: {x: -0.08634439, y: 0.104579814, z: -0.02638895}
+    rootLocalNormal: {x: -0.92576146, y: 0.25082538, z: -0.28293526}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.018, y: -0.09312, z: 0.002}
+    - {x: -0.023637265, y: -0.22504, z: -0.01}
+    - {x: -0.061181366, y: -0.388, z: -0.025}
+    thicknessRoot: 0.0055
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 1
+  - attachBone: c_head
+    rootLocalPos: {x: -0.085445926, y: 0.119752705, z: -0.0015929379}
+    rootLocalNormal: {x: -0.9386395, y: 0.34445563, z: -0.01749872}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.018, y: -0.096719995, z: 0.002}
+    - {x: -0.05318324, y: -0.23373999, z: -0.01}
+    - {x: -0.046408378, y: -0.403, z: -0.025}
+    thicknessRoot: 0.0055
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 1
+  - attachBone: c_head
+    rootLocalPos: {x: -0.08595267, y: 0.11478126, z: -0.014859843}
+    rootLocalNormal: {x: -0.9358675, y: 0.31300786, z: -0.16179654}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.018, y: -0.08304, z: 0.002}
+    - {x: -0.043934807, y: -0.20068, z: -0.01}
+    - {x: -0.051032595, y: -0.34600002, z: -0.025}
+    thicknessRoot: 0.0055
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 1
+  - attachBone: c_head
+    rootLocalPos: {x: 0.085285045, y: 0.1198433, z: -0.004919263}
+    rootLocalNormal: {x: 0.93703175, y: 0.3450366, z: -0.054048233}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.018, y: -0.085200004, z: 0.002}
+    - {x: 0.036, y: -0.2059, z: -0.01}
+    - {x: 0.055, y: -0.35500002, z: -0.025}
+    thicknessRoot: 0.0055
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 2
+  - attachBone: c_head
+    rootLocalPos: {x: 0.08649972, y: 0.11151813, z: -0.017672863}
+    rootLocalNormal: {x: 0.9368209, y: 0.2927994, z: -0.19140303}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.018, y: -0.0888, z: 0.002}
+    - {x: 0.055833295, y: -0.2146, z: -0.01}
+    - {x: 0.04508335, y: -0.37, z: -0.025}
+    thicknessRoot: 0.0055
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 2
+  - attachBone: c_head
+    rootLocalPos: {x: 0.084223345, y: 0.12209219, z: 0.0075627994}
+    rootLocalNormal: {x: 0.9293838, y: 0.35955703, z: 0.083453625}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.018, y: -0.0924, z: 0.002}
+    - {x: 0.030889174, y: -0.22330001, z: -0.01}
+    - {x: 0.05755541, y: -0.38500002, z: -0.025}
+    thicknessRoot: 0.0055
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 2
+  - attachBone: c_head
+    rootLocalPos: {x: 0.08716512, y: 0.10530892, z: -0.022778602}
+    rootLocalNormal: {x: 0.9354788, y: 0.25517797, z: -0.2444659}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.018, y: -0.096, z: 0.002}
+    - {x: 0.01748371, y: -0.232, z: -0.01}
+    - {x: 0.06425814, y: -0.4, z: -0.025}
+    thicknessRoot: 0.0055
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 2
+  - attachBone: c_head
+    rootLocalPos: {x: 0.08655086, y: 0.116714545, z: 0.0014562187}
+    rootLocalNormal: {x: 0.94553274, y: 0.3251381, z: 0.015908593}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.018, y: -0.08232, z: 0.002}
+    - {x: 0.04588227, y: -0.19894, z: -0.01}
+    - {x: 0.050058864, y: -0.343, z: -0.025}
+    thicknessRoot: 0.0055
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 2
+  - attachBone: c_head
+    rootLocalPos: {x: 0.088267714, y: 0.10968349, z: -0.010139887}
+    rootLocalNormal: {x: 0.95326984, y: 0.2815751, z: -0.109508306}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.018, y: -0.08592, z: 0.002}
+    - {x: 0.05196974, y: -0.20764, z: -0.01}
+    - {x: 0.04701513, y: -0.358, z: -0.025}
+    thicknessRoot: 0.0055
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 2
+  - attachBone: c_head
+    rootLocalPos: {x: 0.08501385, y: 0.11861199, z: 0.012188023}
+    rootLocalNormal: {x: 0.9319172, y: 0.33716488, z: 0.13360444}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.018, y: -0.08952, z: 0.002}
+    - {x: 0.022002494, y: -0.21633999, z: -0.01}
+    - {x: 0.06199875, y: -0.373, z: -0.025}
+    thicknessRoot: 0.0055
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 2
+  - attachBone: c_head
+    rootLocalPos: {x: 0.08854056, y: 0.099421345, z: -0.023332441}
+    rootLocalNormal: {x: 0.9432139, y: 0.22037767, z: -0.2485582}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.018, y: -0.09312, z: 0.002}
+    - {x: 0.023637265, y: -0.22504, z: -0.01}
+    - {x: 0.061181366, y: -0.388, z: -0.025}
+    thicknessRoot: 0.0055
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 2
+  - attachBone: c_head
+    rootLocalPos: {x: 0.088632524, y: 0.1103641, z: -0.001342219}
+    rootLocalNormal: {x: 0.95820093, y: 0.28572798, z: -0.014510648}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.018, y: -0.096719995, z: 0.002}
+    - {x: 0.05318324, y: -0.23373999, z: -0.01}
+    - {x: 0.046408378, y: -0.403, z: -0.025}
+    thicknessRoot: 0.0055
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 2
+  - attachBone: c_head
+    rootLocalPos: {x: 0.08972067, y: 0.103758454, z: -0.011865935}
+    rootLocalNormal: {x: 0.96091837, y: 0.2459372, z: -0.1270855}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.018, y: -0.08304, z: 0.002}
+    - {x: 0.043934807, y: -0.20068, z: -0.01}
+    - {x: 0.051032595, y: -0.34600002, z: -0.025}
+    thicknessRoot: 0.0055
+    thicknessTip: 0.0009
+    sideCount: 4
+    groupId: 2
+  - attachBone: c_head
+    rootLocalPos: {x: -0.051942542, y: 0.100739285, z: -0.07502812}
+    rootLocalNormal: {x: -0.55420405, y: 0.22810149, z: -0.800517}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.01, y: -0.0864, z: -0.022}
+    - {x: -0.04, y: -0.2088, z: -0.045}
+    - {x: -0.075, y: -0.36, z: -0.055}
+    thicknessRoot: 0.0058
+    thicknessTip: 0.001
+    sideCount: 4
+    groupId: 3
+  - attachBone: c_head
+    rootLocalPos: {x: -0.052368645, y: 0.11395605, z: -0.07010194}
+    rootLocalNormal: {x: -0.56941056, y: 0.3078666, z: -0.7622268}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.009130435, y: -0.091199994, z: -0.022}
+    - {x: -0.031125803, y: -0.22039999, z: -0.045}
+    - {x: -0.062003143, y: -0.38, z: -0.055}
+    thicknessRoot: 0.0058
+    thicknessTip: 0.001
+    sideCount: 4
+    groupId: 3
+  - attachBone: c_head
+    rootLocalPos: {x: -0.042595576, y: 0.09505739, z: -0.08211896}
+    rootLocalNormal: {x: -0.45160463, y: 0.1950481, z: -0.8706375}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.008260869, y: -0.096, z: -0.022}
+    - {x: -0.022651799, y: -0.232, z: -0.045}
+    - {x: -0.049486507, y: -0.4, z: -0.055}
+    thicknessRoot: 0.0058
+    thicknessTip: 0.001
+    sideCount: 4
+    groupId: 3
+  - attachBone: c_head
+    rootLocalPos: {x: -0.04241309, y: 0.10799511, z: -0.07863516}
+    rootLocalNormal: {x: -0.4569084, y: 0.2713279, z: -0.84712213}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.0073913042, y: -0.1008, z: -0.022}
+    - {x: -0.0149484975, y: -0.2436, z: -0.045}
+    - {x: -0.037894722, y: -0.42000002, z: -0.055}
+    thicknessRoot: 0.0058
+    thicknessTip: 0.001
+    sideCount: 4
+    groupId: 3
+  - attachBone: c_head
+    rootLocalPos: {x: -0.041542325, y: 0.12322771, z: -0.073135}
+    rootLocalNormal: {x: -0.45944786, y: 0.366962, z: -0.80885506}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.0065217386, y: -0.08256, z: -0.022}
+    - {x: -0.00832925, y: -0.19952, z: -0.045}
+    - {x: -0.027603796, y: -0.344, z: -0.055}
+    thicknessRoot: 0.0058
+    thicknessTip: 0.001
+    sideCount: 4
+    groupId: 3
+  - attachBone: c_head
+    rootLocalPos: {x: -0.031795487, y: 0.101180635, z: -0.085422054}
+    rootLocalNormal: {x: -0.3394257, y: 0.23069625, z: -0.91190434}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.0056521734, y: -0.087359995, z: -0.022}
+    - {x: -0.0030270116, y: -0.21112, z: -0.045}
+    - {x: -0.018893285, y: -0.364, z: -0.055}
+    thicknessRoot: 0.0058
+    thicknessTip: 0.001
+    sideCount: 4
+    groupId: 3
+  - attachBone: c_head
+    rootLocalPos: {x: -0.030066531, y: 0.11585235, z: -0.08149345}
+    rootLocalNormal: {x: -0.32797018, y: 0.3197133, z: -0.88894266}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.0047826087, y: -0.09216, z: -0.022}
+    - {x: 0.00082293927, y: -0.22272, z: -0.045}
+    - {x: -0.011925518, y: -0.384, z: -0.055}
+    thicknessRoot: 0.0058
+    thicknessTip: 0.001
+    sideCount: 4
+    groupId: 3
+  - attachBone: c_head
+    rootLocalPos: {x: -0.02731641, y: 0.13290605, z: -0.07497961}
+    rootLocalNormal: {x: -0.30866754, y: 0.43231383, z: -0.8472479}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.0039130435, y: -0.09696, z: -0.022}
+    - {x: 0.0031930427, y: -0.23432, z: -0.045}
+    - {x: -0.0067335675, y: -0.404, z: -0.055}
+    thicknessRoot: 0.0058
+    thicknessTip: 0.001
+    sideCount: 4
+    groupId: 3
+  - attachBone: c_head
+    rootLocalPos: {x: -0.016836403, y: 0.09568368, z: -0.09083344}
+    rootLocalNormal: {x: -0.1786178, y: 0.19866131, z: -0.9636542}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.0030434781, y: -0.10176, z: -0.022}
+    - {x: 0.004165485, y: -0.24591999, z: -0.045}
+    - {x: -0.0032188096, y: -0.424, z: -0.055}
+    thicknessRoot: 0.0058
+    thicknessTip: 0.001
+    sideCount: 4
+    groupId: 3
+  - attachBone: c_head
+    rootLocalPos: {x: -0.013451545, y: 0.10959708, z: -0.087850206}
+    rootLocalNormal: {x: -0.14525448, y: 0.2810488, z: -0.94863725}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.0021739132, y: -0.083519995, z: -0.022}
+    - {x: 0.0039261063, y: -0.20183998, z: -0.045}
+    - {x: -0.0011582383, y: -0.348, z: -0.055}
+    thicknessRoot: 0.0058
+    thicknessTip: 0.001
+    sideCount: 4
+    groupId: 3
+  - attachBone: c_head
+    rootLocalPos: {x: -0.008984459, y: 0.12596668, z: -0.08248693}
+    rootLocalNormal: {x: -0.099931195, y: 0.38503662, z: -0.9174751}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.0013043481, y: -0.088319995, z: -0.022}
+    - {x: 0.0027506265, y: -0.21344, z: -0.045}
+    - {x: -0.00022098832, y: -0.368, z: -0.055}
+    thicknessRoot: 0.0058
+    thicknessTip: 0.001
+    sideCount: 4
+    groupId: 3
+  - attachBone: c_head
+    rootLocalPos: {x: -0.0025305627, y: 0.10058079, z: -0.091256484}
+    rootLocalNormal: {x: -0.02699484, y: 0.22717072, z: -0.9734807}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: -0.0004347825, y: -0.09312, z: -0.022}
+    - {x: 0.0009842009, y: -0.22504, z: -0.045}
+    - {x: 0.00000712825, y: -0.388, z: -0.055}
+    thicknessRoot: 0.0058
+    thicknessTip: 0.001
+    sideCount: 4
+    groupId: 3
+  - attachBone: c_head
+    rootLocalPos: {x: 0.0028121176, y: 0.1152116, z: -0.0870368}
+    rootLocalNormal: {x: 0.03064122, y: 0.3156975, z: -0.94836503}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.0004347825, y: -0.09791999, z: -0.022}
+    - {x: -0.0009842041, y: -0.23663999, z: -0.045}
+    - {x: -0.0000071321615, y: -0.408, z: -0.055}
+    thicknessRoot: 0.0058
+    thicknessTip: 0.001
+    sideCount: 4
+    groupId: 3
+  - attachBone: c_head
+    rootLocalPos: {x: 0.009268205, y: 0.1317408, z: -0.07982863}
+    rootLocalNormal: {x: 0.10443532, y: 0.42421514, z: -0.89951915}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.0013043475, y: -0.10272, z: -0.022}
+    - {x: -0.0027506317, y: -0.24824, z: -0.045}
+    - {x: 0.00022098051, y: -0.428, z: -0.055}
+    thicknessRoot: 0.0058
+    thicknessTip: 0.001
+    sideCount: 4
+    groupId: 3
+  - attachBone: c_head
+    rootLocalPos: {x: 0.012994004, y: 0.10479364, z: -0.08928969}
+    rootLocalNormal: {x: 0.13935809, y: 0.25210053, z: -0.957614}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.0021739125, y: -0.084479995, z: -0.022}
+    - {x: -0.0039261114, y: -0.20415999, z: -0.045}
+    - {x: 0.0011582305, y: -0.352, z: -0.055}
+    thicknessRoot: 0.0058
+    thicknessTip: 0.001
+    sideCount: 4
+    groupId: 3
+  - attachBone: c_head
+    rootLocalPos: {x: 0.019930674, y: 0.11931284, z: -0.083272934}
+    rootLocalNormal: {x: 0.21876213, y: 0.3416387, z: -0.9140165}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.0030434786, y: -0.08928, z: -0.022}
+    - {x: -0.004165484, y: -0.21576, z: -0.045}
+    - {x: 0.003218812, y: -0.372, z: -0.055}
+    thicknessRoot: 0.0058
+    thicknessTip: 0.001
+    sideCount: 4
+    groupId: 3
+  - attachBone: c_head
+    rootLocalPos: {x: 0.027557071, y: 0.13476647, z: -0.073901325}
+    rootLocalNormal: {x: 0.31282166, y: 0.44538838, z: -0.8389111}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.0039130435, y: -0.09407999, z: -0.022}
+    - {x: -0.0031930427, y: -0.22735998, z: -0.045}
+    - {x: 0.0067335675, y: -0.392, z: -0.055}
+    thicknessRoot: 0.0058
+    thicknessTip: 0.001
+    sideCount: 4
+    groupId: 3
+  - attachBone: c_head
+    rootLocalPos: {x: 0.026164226, y: 0.09624109, z: -0.08847679}
+    rootLocalNormal: {x: 0.27773997, y: 0.20188309, z: -0.9392038}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.0047826087, y: -0.09888, z: -0.022}
+    - {x: -0.00082293927, y: -0.23896, z: -0.045}
+    - {x: 0.011925518, y: -0.412, z: -0.055}
+    thicknessRoot: 0.0058
+    thicknessTip: 0.001
+    sideCount: 4
+    groupId: 3
+  - attachBone: c_head
+    rootLocalPos: {x: 0.03349133, y: 0.108527824, z: -0.08266283}
+    rootLocalNormal: {x: 0.3610765, y: 0.2745528, z: -0.89120394}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.0056521734, y: -0.10368, z: -0.022}
+    - {x: 0.0030270135, y: -0.25056, z: -0.045}
+    - {x: 0.018893287, y: -0.432, z: -0.055}
+    thicknessRoot: 0.0058
+    thicknessTip: 0.001
+    sideCount: 4
+    groupId: 3
+  - attachBone: c_head
+    rootLocalPos: {x: 0.041190103, y: 0.12159637, z: -0.07407438}
+    rootLocalNormal: {x: 0.454081, y: 0.35633937, z: -0.81659824}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.0065217386, y: -0.08544, z: -0.022}
+    - {x: 0.00832925, y: -0.20648, z: -0.045}
+    - {x: 0.027603796, y: -0.356, z: -0.055}
+    thicknessRoot: 0.0058
+    thicknessTip: 0.001
+    sideCount: 4
+    groupId: 3
+  - attachBone: c_head
+    rootLocalPos: {x: 0.03965773, y: 0.09834604, z: -0.08280028}
+    rootLocalNormal: {x: 0.42194927, y: 0.21410221, z: -0.8809762}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.007391304, y: -0.09024, z: -0.022}
+    - {x: 0.014948499, y: -0.21808, z: -0.045}
+    - {x: 0.037894722, y: -0.37600002, z: -0.055}
+    thicknessRoot: 0.0058
+    thicknessTip: 0.001
+    sideCount: 4
+    groupId: 3
+  - attachBone: c_head
+    rootLocalPos: {x: 0.047109067, y: 0.10968133, z: -0.07533165}
+    rootLocalNormal: {x: 0.5087648, y: 0.281562, z: -0.81356084}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.008260869, y: -0.09504, z: -0.022}
+    - {x: 0.022651805, y: -0.22967999, z: -0.045}
+    - {x: 0.049486518, y: -0.396, z: -0.055}
+    thicknessRoot: 0.0058
+    thicknessTip: 0.001
+    sideCount: 4
+    groupId: 3
+  - attachBone: c_head
+    rootLocalPos: {x: 0.05429207, y: 0.12109862, z: -0.06533561}
+    rootLocalNormal: {x: 0.5979395, y: 0.3531185, z: -0.7195662}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.009130435, y: -0.09984, z: -0.022}
+    - {x: 0.031125808, y: -0.24128, z: -0.045}
+    - {x: 0.062003147, y: -0.416, z: -0.055}
+    thicknessRoot: 0.0058
+    thicknessTip: 0.001
+    sideCount: 4
+    groupId: 3
+  - attachBone: c_head
+    rootLocalPos: {x: 0.051510908, y: 0.099504694, z: -0.075676516}
+    rootLocalNormal: {x: 0.54879403, y: 0.22086512, z: -0.8062529}
+    pointsLocal:
+    - {x: 0, y: 0, z: 0}
+    - {x: 0.01, y: -0.10464, z: -0.022}
+    - {x: 0.040000003, y: -0.25288, z: -0.045}
+    - {x: 0.07500001, y: -0.43600002, z: -0.055}
+    thicknessRoot: 0.0058
+    thicknessTip: 0.001
+    sideCount: 4
+    groupId: 3
+  defaultLength: 1
+  defaultDensity: 1
+  defaultThickness: 1
+  defaultCurl: 0.28
+  defaultWave: 0.45
+  defaultFrizz: 0.08
+  defaultColor:
+    rootColor: {r: 0.36, g: 0.035, b: 0.045, a: 1}
+    tipColor: {r: 0.78, g: 0.12, b: 0.12, a: 1}
+    rootFade: 0.25
+    highlightColor: {r: 0.78, g: 0.12, b: 0.12, a: 1}
+    highlightStrength: 0.1
+  groupLengthScale:
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  hairMaterial: {fileID: 0}
+  twoSided: 1
+  useAnisotropic: 1
+  segmentsLOD0: 18
+  segmentsLOD1: 10
+  segmentsLOD2: 5
+  maxVertices: 90000
+  legacyVrmPiece: {fileID: 0}
+  defaultBraid:
+    type: 0
+    crossings: 9
+    strandRadius: 0.008
+    tightness: 0.85
+    taperEnd: 1
+  scalpMask: {fileID: 0}
+  headCollisionMask: {fileID: 11400000, guid: 6b620262bd0277f44b8f21ba0978ca2c, type: 2}
+  scalpProfile: {fileID: 11400000, guid: 5e70869834bf0e34fb3c18f488a4ac7b, type: 2}
+  strandSides: 4
+  strandWidthScale: 1.45
+  strandDepthScale: 0.42
+  enableStrandSeparation: 1
+  strandSeparationRadius: 0.018
+  strandSeparationStrength: 0.35
+  bundleAnchors: []

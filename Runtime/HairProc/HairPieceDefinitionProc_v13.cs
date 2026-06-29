@@ -29,6 +29,14 @@ namespace CharacterEditor.Hair.Proc
         [Header("v1.5 – Scalp growth profile")]
         public ScalpProfileDefinition scalpProfile;
 
+        [Header("v1.5 – Strand shape")]
+        [Tooltip("Cross-section sides for generated locks. 3-4 = anime sheet/clump, 6-8 = round locks/dreads.")]
+        [Range(3, 10)] public int strandSides = 6;
+        [Tooltip("Width multiplier across the lock. Use 2-4 for flat anime hair sheets.")]
+        [Range(0.25f, 5f)] public float strandWidthScale = 1f;
+        [Tooltip("Depth multiplier through the lock. Use 0.2-0.6 for flat anime hair sheets.")]
+        [Range(0.1f, 3f)] public float strandDepthScale = 1f;
+
         [Header("v1.4 – Strand self separation")]
         [Tooltip("Approximate collision between procedural locks. This keeps neighboring tubes from sharing the same centerline.")]
         public bool enableStrandSeparation = true;
