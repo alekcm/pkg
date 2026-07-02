@@ -14,3 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CharacterEditor.Hair.HairCatalog
   pieces:
   - {fileID: 11400000, guid: 33e50ac07b882244cb9fe4cc1b52dd50, type: 2}
+  - {fileID: 11400000, guid: 044153db07255244a856a7fad5a6ea40, type: 2}

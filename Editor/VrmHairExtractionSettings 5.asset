@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f52569001b1af004390f9451c7566a17, type: 3}
+  m_Name: VrmHairExtractionSettings 5
+  m_EditorClassIdentifier: Assembly-CSharp-Editor::CharacterEditor.Hair.EditorImport.VrmHairExtractionSettings
+  sourceFolder: Assets/Raw/VRMHair
+  outputFolder: Assets/Generated/HairLibrary
+  slotFromFolderFallback: 0
+  materialShader: {fileID: 0}
+  includeKeywords:
+  - hair
+  - _hair
+  - kami
+  excludeKeywords:
+  - body
+  - face
+  - skin
+  - eye
+  - mouth
+  - teeth
+  - cloth
+  - wear
+  - brow
+  - lash
+  importSkinning: 1
+  flipXForUnity: 1
+  reverseTriangleWinding: 1
+  writeDiagnosticJson: 1

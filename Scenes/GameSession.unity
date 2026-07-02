@@ -10495,14 +10495,86 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -7949327619853559495, guid: 7f9cd558bd780d64aa0cfb8251e5db2b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0.000100000514
+      objectReference: {fileID: 0}
+    - target: {fileID: -7949327619853559495, guid: 7f9cd558bd780d64aa0cfb8251e5db2b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0.0002999998
+      objectReference: {fileID: 0}
+    - target: {fileID: -7949327619853559495, guid: 7f9cd558bd780d64aa0cfb8251e5db2b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: -0.00009999999
+      objectReference: {fileID: 0}
+    - target: {fileID: -5340988775145445462, guid: 7f9cd558bd780d64aa0cfb8251e5db2b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 77.41832
+      objectReference: {fileID: 0}
+    - target: {fileID: -5340988775145445462, guid: 7f9cd558bd780d64aa0cfb8251e5db2b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 178.08624
+      objectReference: {fileID: 0}
+    - target: {fileID: -5340988775145445462, guid: 7f9cd558bd780d64aa0cfb8251e5db2b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 151.08496
+      objectReference: {fileID: 0}
+    - target: {fileID: -2055563656229279302, guid: 7f9cd558bd780d64aa0cfb8251e5db2b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0.00009999999
+      objectReference: {fileID: 0}
+    - target: {fileID: -2055563656229279302, guid: 7f9cd558bd780d64aa0cfb8251e5db2b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0.00029999996
+      objectReference: {fileID: 0}
+    - target: {fileID: -1779971182389039579, guid: 7f9cd558bd780d64aa0cfb8251e5db2b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 77.41832
+      objectReference: {fileID: 0}
+    - target: {fileID: -1779971182389039579, guid: 7f9cd558bd780d64aa0cfb8251e5db2b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: -178.08624
+      objectReference: {fileID: 0}
+    - target: {fileID: -1779971182389039579, guid: 7f9cd558bd780d64aa0cfb8251e5db2b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: -151.08496
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 7f9cd558bd780d64aa0cfb8251e5db2b, type: 3}
       propertyPath: m_Name
       value: wumon@T-Pose
+      objectReference: {fileID: 0}
+    - target: {fileID: 1108307848154636331, guid: 7f9cd558bd780d64aa0cfb8251e5db2b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0.00009999999
+      objectReference: {fileID: 0}
+    - target: {fileID: 1108307848154636331, guid: 7f9cd558bd780d64aa0cfb8251e5db2b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: -0.00029999996
+      objectReference: {fileID: 0}
+    - target: {fileID: 1844457095382695669, guid: 7f9cd558bd780d64aa0cfb8251e5db2b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0.000100000514
+      objectReference: {fileID: 0}
+    - target: {fileID: 1844457095382695669, guid: 7f9cd558bd780d64aa0cfb8251e5db2b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: -0.0002999998
+      objectReference: {fileID: 0}
+    - target: {fileID: 1844457095382695669, guid: 7f9cd558bd780d64aa0cfb8251e5db2b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0.00009999999
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 7f9cd558bd780d64aa0cfb8251e5db2b, type: 3}
+      propertyPath: m_Enabled
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5866666021909216657, guid: 7f9cd558bd780d64aa0cfb8251e5db2b, type: 3}
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: 3801fd497a7e3b44292fc263278f10ba, type: 2}
+    - target: {fileID: 5866666021909216657, guid: 7f9cd558bd780d64aa0cfb8251e5db2b, type: 3}
+      propertyPath: m_WarningMessage
+      value: 
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: -8700617353114198275, guid: 7f9cd558bd780d64aa0cfb8251e5db2b, type: 3}
