@@ -1,0 +1,145 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba39b469c0e2c624dbf1ce6c6c56fbb9, type: 3}
+  m_Name: VrmCharacterExtractionSettings
+  m_EditorClassIdentifier: Assembly-CSharp-Editor::CharacterEditor.VrmImport.VrmCharacterExtractionSettings
+  sourceFolder: Assets/Raw/VRMHair
+  outputFolder: Assets/Generated/CharacterLibrary
+  materialShader: {fileID: 0}
+  importSkinning: 1
+  flipXForUnity: 1
+  reverseTriangleWinding: 1
+  writeDiagnostic: 1
+  hairFrontKeywords:
+  - hairfront
+  - hair_front
+  - bangs
+  - bang
+  - fringe
+  - "\u0447\u0435\u043B\u043A"
+  hairBackKeywords:
+  - hairback
+  - hair_back
+  hairSideKeywords:
+  - hairside
+  - hair_side
+  - sideleft
+  - sideright
+  - side_l
+  - side_r
+  hairAhogeKeywords:
+  - ahoge
+  - antenna
+  - "\u30A2\u30DB\u6BDB"
+  hairExtraKeywords:
+  - hairextra
+  - hair_extra
+  - hanege
+  - extension
+  hairGenericKeywords:
+  - hair
+  - kami
+  - "\u9AEA"
+  underwearKeywords:
+  - underwear
+  - inner
+  - bra
+  - panties
+  - "\u0431\u0435\u043B\u044C\u0435"
+  socksKeywords:
+  - socks
+  - sock
+  - "\u043D\u043E\u0441\u043A\u0438"
+  - stocking
+  - "\u0447\u0443\u043B\u043A\u0438"
+  tightsKeywords:
+  - tights
+  - "\u043A\u043E\u043B\u0433\u043E\u0442\u043A\u0438"
+  - pantyhose
+  shoesKeywords:
+  - shoes
+  - shoe
+  - boots
+  - boot
+  - "\u043E\u0431\u0443\u0432\u044C"
+  - "\u0431\u043E\u0442\u0438\u043D\u043A\u0438"
+  - "\u0442\u0443\u0444\u043B\u0438"
+  - "\u043A\u0440\u043E\u0441\u0441"
+  pantsKeywords:
+  - pants
+  - pant
+  - shorts
+  - short
+  - bottom
+  - "\u0448\u0442\u0430\u043D\u044B"
+  - "\u0448\u043E\u0440\u0442\u044B"
+  - "\u0431\u0440\u044E\u043A\u0438"
+  skirtKeywords:
+  - skirt
+  - "\u044E\u0431\u043A\u0430"
+  topsKeywords:
+  - tops
+  - top
+  - shirt
+  - tshirt
+  - blouse
+  - "\u0432\u0435\u0440\u0445"
+  - "\u0440\u0443\u0431\u0430\u0448\u043A\u0430"
+  - "\u0444\u0443\u0442\u0431\u043E\u043B\u043A\u0430"
+  - "\u043C\u0430\u0439\u043A\u0430"
+  jacketKeywords:
+  - jacket
+  - coat
+  - hoodie
+  - "\u043A\u0443\u0440\u0442\u043A\u0430"
+  - "\u0436\u0430\u043A\u0435\u0442"
+  - "\u043F\u0430\u043B\u044C\u0442\u043E"
+  glovesKeywords:
+  - glove
+  - gloves
+  - "\u043F\u0435\u0440\u0447\u0430\u0442\u043A\u0438"
+  hatKeywords:
+  - hat
+  - cap
+  - helmet
+  - "\u0448\u0430\u043F\u043A\u0430"
+  - "\u0448\u043B\u044F\u043F\u0430"
+  - "\u043A\u0435\u043F\u043A\u0430"
+  accessoryKeywords:
+  - accessory
+  - acc
+  - ribbon
+  - bow
+  - glasses
+  - necklace
+  - ring
+  - earring
+  - "\u0430\u043A\u0441\u0435\u0441\u0441\u0443\u0430\u0440"
+  bodyKeywords:
+  - body
+  - "\u0442\u0435\u043B\u043E"
+  faceKeywords:
+  - face
+  - "\u043B\u0438\u0446\u043E"
+  - mouth
+  - eye
+  - eyelash
+  - eyeline
+  - brow
+  - teeth
+  - tongue
+  meshNameFace:
+  - face
+  meshNameBody:
+  - body
+  meshNameHair:
+  - hair
